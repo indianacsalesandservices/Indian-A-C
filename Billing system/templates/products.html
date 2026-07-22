@@ -1,0 +1,545 @@
+﻿{% extends "base.html" %}
+{% block title %}Products - BillPro{% endblock %}
+{% block page_title %}<strong>Product Management</strong>{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <form class="d-flex" method="GET">
+        <input type="text" class="form-control me-2" name="search" placeholder="Search products..." value="{{ search }}">
+        <button class="btn btn-outline-primary me-2"><i class="bi bi-search"></i></button>
+        {% if search %}<a href="{{ url_for('products') }}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+    </form>
+    {% if current_user.role == 'admin' %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        <i class="bi bi-plus-circle"></i> Add Product
+    </button>
+    {% endif %}
+</div>
+
+<div class="row g-3">
+    {% for p in products %}
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card h-100 product-card{% if p.stock <= 5 and p.stock > 0 %} border-danger{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0{% if p.stock <= 5 and p.stock > 0 %} text-danger{% endif %}">{{ p.name }}</h6>
+                    {% if p.stock <= 5 and p.stock > 0 %}
+                    <span class="badge bg-danger">Low Stock</span>
+                    {% elif p.stock > 0 %}
+                    <span class="badge bg-success">In Stock</span>
+                    {% else %}
+                    <span class="badge bg-danger">Out of Stock</span>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-2">{{ p.description or 'No description' }}</p>
+                <div class="mb-2">
+                    <span class="h5 text-primary">&#8377;{{ "{:,.2f}".format(p.price) }}</span>
+                    <small class="text-muted ms-1">+ {{ p.gst_rate }}% GST</small>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>HSN: {{ p.hsn_code or '-' }}</span>
+                    <span>Unit: {{ p.unit or 'NOS' }}</span>
+                    <span{% if p.stock <= 5 and p.stock > 0 %} class="text-danger fw-bold"{% endif %}>Stock: {{ p.stock }}</span>
+                </div>
+            </div>
+            {% if current_user.role == 'admin' %}
+            <div class="card-footer bg-transparent border-top-0">
+                <button class="btn btn-sm btn-outline-primary w-100 mb-1" data-bs-toggle="modal" data-bs-target="#editProduct{{ p.id }}">
+                    <i class="bi bi-pencil"></i> Edit
+                </button>
+                <form method="POST" action="{{ url_for('delete_product', id=p.id) }}" onsubmit="return confirm('Delete this product?')">
+                    <button class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash"></i> Delete</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if current_user.role == 'admin' %}
+        <div class="modal fade" id="editProduct{{ p.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ url_for('edit_product', id=p.id) }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Product</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3"><label class="form-label">Name</label><input type="text" class="form-control" name="name" value="{{ p.name }}" required></div>
+                            <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2">{{ p.description or '' }}</textarea></div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3"><label class="form-label">Price (&#8377;)</label><input type="number" class="form-control" name="price" value="{{ p.price }}" step="0.01" required></div>
+                                <div class="col-md-6 mb-3"><label class="form-label">Stock</label><input type="number" class="form-control" name="stock" value="{{ p.stock }}" required></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3"><label class="form-label">GST Rate (%)</label><input type="number" class="form-control" name="gst_rate" value="{{ p.gst_rate }}" step="0.01" required></div>
+                                <div class="col-md-6 mb-3"><label class="form-label">HSN Code</label>
+                                    <input type="text" class="form-control" name="hsn_code" id="hsnSearchEdit{{ p.id }}" value="{{ p.hsn_code or '' }}" placeholder="Search HSN code..." autocomplete="off" oninput="filterHSN(this,'hsnListEdit{{ p.id }}')">
+                                    <div class="hsn-dropdown" id="hsnListEdit{{ p.id }}"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Unit of Measure</label>
+                                <select class="form-select" name="unit">
+                                    <option value="NOS" {% if p.unit == 'NOS' %}selected{% endif %}>NOS (Numbers)</option>
+                                    <option value="PCS" {% if p.unit == 'PCS' %}selected{% endif %}>PCS (Pieces)</option>
+                                    <option value="UNT" {% if p.unit == 'UNT' %}selected{% endif %}>UNT (Units)</option>
+                                    <option value="SET" {% if p.unit == 'SET' %}selected{% endif %}>SET (Sets)</option>
+                                    <option value="PR" {% if p.unit == 'PR' %}selected{% endif %}>PR (Pairs)</option>
+                                    <option value="DOZ" {% if p.unit == 'DOZ' %}selected{% endif %}>DOZ (Dozens)</option>
+                                    <option value="LOT" {% if p.unit == 'LOT' %}selected{% endif %}>LOT (Lots)</option>
+                                    <option value="GRT" {% if p.unit == 'GRT' %}selected{% endif %}>GRT (Gross)</option>
+                                    <option value="BOX" {% if p.unit == 'BOX' %}selected{% endif %}>BOX (Boxes)</option>
+                                    <option value="CTN" {% if p.unit == 'CTN' %}selected{% endif %}>CTN (Cartons)</option>
+                                    <option value="PAC" {% if p.unit == 'PAC' %}selected{% endif %}>PAC (Packs)</option>
+                                    <option value="BDL" {% if p.unit == 'BDL' %}selected{% endif %}>BDL (Bundles)</option>
+                                    <option value="BAG" {% if p.unit == 'BAG' %}selected{% endif %}>BAG (Bags)</option>
+                                    <option value="BTL" {% if p.unit == 'BTL' %}selected{% endif %}>BTL (Bottles)</option>
+                                    <option value="CAN" {% if p.unit == 'CAN' %}selected{% endif %}>CAN (Cans)</option>
+                                    <option value="DRM" {% if p.unit == 'DRM' %}selected{% endif %}>DRM (Drums)</option>
+                                    <option value="ROL" {% if p.unit == 'ROL' %}selected{% endif %}>ROL (Rolls)</option>
+                                    <option value="SHT" {% if p.unit == 'SHT' %}selected{% endif %}>SHT (Sheets)</option>
+                                    <option value="TUB" {% if p.unit == 'TUB' %}selected{% endif %}>TUB (Tubes)</option>
+                                    <option value="LTS" {% if p.unit == 'LTS' %}selected{% endif %}>LTS (Loose)</option>
+                                    <option value="KGS" {% if p.unit == 'KGS' %}selected{% endif %}>KGS (Kilograms)</option>
+                                    <option value="GMS" {% if p.unit == 'GMS' %}selected{% endif %}>GMS (Grams)</option>
+                                    <option value="QTL" {% if p.unit == 'QTL' %}selected{% endif %}>QTL (Quintals)</option>
+                                    <option value="TON" {% if p.unit == 'TON' %}selected{% endif %}>TON (Tonnes)</option>
+                                    <option value="LTR" {% if p.unit == 'LTR' %}selected{% endif %}>LTR (Litres)</option>
+                                    <option value="MLT" {% if p.unit == 'MLT' %}selected{% endif %}>MLT (Millilitres)</option>
+                                    <option value="MTR" {% if p.unit == 'MTR' %}selected{% endif %}>MTR (Metres)</option>
+                                    <option value="CMS" {% if p.unit == 'CMS' %}selected{% endif %}>CMS (Centimetres)</option>
+                                    <option value="SQM" {% if p.unit == 'SQM' %}selected{% endif %}>SQM (Sq. Metres)</option>
+                                    <option value="SQF" {% if p.unit == 'SQF' %}selected{% endif %}>SQF (Sq. Feet)</option>
+                                    <option value="SQY" {% if p.unit == 'SQY' %}selected{% endif %}>SQY (Sq. Yards)</option>
+                                    <option value="CUF" {% if p.unit == 'CUF' %}selected{% endif %}>CUF (Cu. Feet)</option>
+                                    <option value="CUM" {% if p.unit == 'CUM' %}selected{% endif %}>CUM (Cu. Metres)</option>
+                                    <option value="HRS" {% if p.unit == 'HRS' %}selected{% endif %}>HRS (Hours)</option>
+                                    <option value="DAY" {% if p.unit == 'DAY' %}selected{% endif %}>DAY (Days)</option>
+                                    <option value="MTH" {% if p.unit == 'MTH' %}selected{% endif %}>MTH (Months)</option>
+                                    <option value="YRS" {% if p.unit == 'YRS' %}selected{% endif %}>YRS (Years)</option>
+                                    <option value="INR" {% if p.unit == 'INR' %}selected{% endif %}>INR (Rupees)</option>
+                                    <option value="HP" {% if p.unit == 'HP' %}selected{% endif %}>HP (Horsepower)</option>
+                                    <option value="TONR" {% if p.unit == 'TONR' %}selected{% endif %}>TONR (Ton of Refrigeration)</option>
+                                    <option value="WATT" {% if p.unit == 'WATT' %}selected{% endif %}>WATT (Watts)</option>
+                                    <option value="KW" {% if p.unit == 'KW' %}selected{% endif %}>KW (Kilowatts)</option>
+                                    <option value="KVA" {% if p.unit == 'KVA' %}selected{% endif %}>KVA (Kilovolt-Ampere)</option>
+                                    <option value="VOLT" {% if p.unit == 'VOLT' %}selected{% endif %}>VOLT (Volts)</option>
+                                    <option value="AMP" {% if p.unit == 'AMP' %}selected{% endif %}>AMP (Amperes)</option>
+                                    <option value="BTU" {% if p.unit == 'BTU' %}selected{% endif %}>BTU (British Thermal Units)</option>
+                                    <option value="CFM" {% if p.unit == 'CFM' %}selected{% endif %}>CFM (Cubic Feet/Minute)</option>
+                                    <option value="RPM" {% if p.unit == 'RPM' %}selected{% endif %}>RPM (Revolutions/Minute)</option>
+                                    <option value="MM" {% if p.unit == 'MM' %}selected{% endif %}>MM (Millimetres)</option>
+                                    <option value="FT" {% if p.unit == 'FT' %}selected{% endif %}>FT (Feet)</option>
+                                    <option value="INCH" {% if p.unit == 'INCH' %}selected{% endif %}>INCH (Inches)</option>
+                                    <option value="YD" {% if p.unit == 'YD' %}selected{% endif %}>YD (Yards)</option>
+                                    <option value="GM" {% if p.unit == 'GM' %}selected{% endif %}>GM (Grammes)</option>
+                                    <option value="LB" {% if p.unit == 'LB' %}selected{% endif %}>LB (Pounds)</option>
+                                    <option value="OZ" {% if p.unit == 'OZ' %}selected{% endif %}>OZ (Ounces)</option>
+                                    <option value="KG" {% if p.unit == 'KG' %}selected{% endif %}>KG (Kilogramme)</option>
+                                    <option value="GM" {% if p.unit == 'GM' %}selected{% endif %}>GM (Grammes)</option>
+                                    <option value="LTR" {% if p.unit == 'LTR' %}selected{% endif %}>LTR (Litres)</option>
+                                    <option value="ML" {% if p.unit == 'ML' %}selected{% endif %}>ML (Millilitres)</option>
+                                    <option value="GAL" {% if p.unit == 'GAL' %}selected{% endif %}>GAL (Gallons)</option>
+                                    <option value="PCS" {% if p.unit == 'PCS' %}selected{% endif %}>PCS (Pieces)</option>
+                                    <option value="SET" {% if p.unit == 'SET' %}selected{% endif %}>SET (Sets)</option>
+                                    <option value="KIT" {% if p.unit == 'KIT' %}selected{% endif %}>KIT (Kits)</option>
+                                    <option value="PAIR" {% if p.unit == 'PAIR' %}selected{% endif %}>PAIR (Pairs)</option>
+                                    <option value="ROLL" {% if p.unit == 'ROLL' %}selected{% endif %}>ROLL (Rolls)</option>
+                                    <option value="SHEET" {% if p.unit == 'SHEET' %}selected{% endif %}>SHEET (Sheets)</option>
+                                    <option value="COIL" {% if p.unit == 'COIL' %}selected{% endif %}>COIL (Coils)</option>
+                                    <option value="STRIP" {% if p.unit == 'STRIP' %}selected{% endif %}>STRIP (Strips)</option>
+                                    <option value="TUBE" {% if p.unit == 'TUBE' %}selected{% endif %}>TUBE (Tubes)</option>
+                                    <option value="PIPE" {% if p.unit == 'PIPE' %}selected{% endif %}>PIPE (Pipes)</option>
+                                    <option value="LINE" {% if p.unit == 'LINE' %}selected{% endif %}>LINE (Lines)</option>
+                                    <option value="METER" {% if p.unit == 'METER' %}selected{% endif %}>METER (Meters)</option>
+                                    <option value="CM" {% if p.unit == 'CM' %}selected{% endif %}>CM (Centimetres)</option>
+                                    <option value="MM" {% if p.unit == 'MM' %}selected{% endif %}>MM (Millimetres)</option>
+                                    <option value="SQMTR" {% if p.unit == 'SQMTR' %}selected{% endif %}>SQMTR (Square Metres)</option>
+                                    <option value="SQFT" {% if p.unit == 'SQFT' %}selected{% endif %}>SQFT (Square Feet)</option>
+                                    <option value="SQYD" {% if p.unit == 'SQYD' %}selected{% endif %}>SQYD (Square Yards)</option>
+                                    <option value="CFT" {% if p.unit == 'CFT' %}selected{% endif %}>CFT (Cubic Feet)</option>
+                                    <option value="CBM" {% if p.unit == 'CBM' %}selected{% endif %}>CBM (Cubic Metres)</option>
+                                    <option value="CUM" {% if p.unit == 'CUM' %}selected{% endif %}>CUM (Cubic Metres)</option>
+                                    <option value="HR" {% if p.unit == 'HR' %}selected{% endif %}>HR (Hours)</option>
+                                    <option value="MIN" {% if p.unit == 'MIN' %}selected{% endif %}>MIN (Minutes)</option>
+                                    <option value="SEC" {% if p.unit == 'SEC' %}selected{% endif %}>SEC (Seconds)</option>
+                                    <option value="WK" {% if p.unit == 'WK' %}selected{% endif %}>WK (Weeks)</option>
+                                    <option value="QTR" {% if p.unit == 'QTR' %}selected{% endif %}>QTR (Quarters)</option>
+                                    <option value="FORTNIGHT" {% if p.unit == 'FORTNIGHT' %}selected{% endif %}>FORTNIGHT (Fortnight)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% if not products %}
+    <div class="col-12 text-center text-muted py-5">No products found</div>
+    {% endif %}
+</div>
+
+{% if current_user.role == 'admin' %}
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_product') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Name *</label><input type="text" class="form-control" name="name" required></div>
+                    <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2"></textarea></div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="form-label">Price (&#8377;) *</label><input type="number" class="form-control" name="price" step="0.01" required></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Stock *</label><input type="number" class="form-control" name="stock" value="0" required></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="form-label">GST Rate (%)</label><input type="number" class="form-control" name="gst_rate" value="18" step="0.01"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">HSN Code</label>
+                            <input type="text" class="form-control" name="hsn_code" id="hsnSearchAdd" placeholder="Search HSN code..." autocomplete="off" oninput="filterHSN(this,'hsnListAdd')">
+                            <input type="hidden" name="hsn_code_val" id="hsnValAdd">
+                            <div class="hsn-dropdown" id="hsnListAdd"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Unit of Measure</label>
+                        <select class="form-select" name="unit">
+                            <option value="NOS">NOS (Numbers)</option>
+                            <option value="PCS">PCS (Pieces)</option>
+                            <option value="UNT">UNT (Units)</option>
+                            <option value="SET">SET (Sets)</option>
+                            <option value="PR">PR (Pairs)</option>
+                            <option value="DOZ">DOZ (Dozens)</option>
+                            <option value="LOT">LOT (Lots)</option>
+                            <option value="GRT">GRT (Gross)</option>
+                            <option value="BOX">BOX (Boxes)</option>
+                            <option value="CTN">CTN (Cartons)</option>
+                            <option value="PAC">PAC (Packs)</option>
+                            <option value="BDL">BDL (Bundles)</option>
+                            <option value="BAG">BAG (Bags)</option>
+                            <option value="BTL">BTL (Bottles)</option>
+                            <option value="CAN">CAN (Cans)</option>
+                            <option value="DRM">DRM (Drums)</option>
+                            <option value="ROL">ROL (Rolls)</option>
+                            <option value="SHT">SHT (Sheets)</option>
+                            <option value="TUB">TUB (Tubes)</option>
+                            <option value="LTS">LTS (Loose)</option>
+                            <option value="KGS">KGS (Kilograms)</option>
+                            <option value="GMS">GMS (Grams)</option>
+                            <option value="QTL">QTL (Quintals)</option>
+                            <option value="TON">TON (Tonnes)</option>
+                            <option value="LTR">LTR (Litres)</option>
+                            <option value="MLT">MLT (Millilitres)</option>
+                            <option value="MTR">MTR (Metres)</option>
+                            <option value="CMS">CMS (Centimetres)</option>
+                            <option value="SQM">SQM (Sq. Metres)</option>
+                            <option value="SQF">SQF (Sq. Feet)</option>
+                            <option value="SQY">SQY (Sq. Yards)</option>
+                            <option value="CUF">CUF (Cu. Feet)</option>
+                            <option value="CUM">CUM (Cu. Metres)</option>
+                            <option value="HRS">HRS (Hours)</option>
+                            <option value="DAY">DAY (Days)</option>
+                            <option value="MTH">MTH (Months)</option>
+                            <option value="YRS">YRS (Years)</option>
+                            <option value="INR">INR (Rupees)</option>
+                            <option value="HP">HP (Horsepower)</option>
+                            <option value="TONR">TONR (Ton of Refrigeration)</option>
+                            <option value="WATT">WATT (Watts)</option>
+                            <option value="KW">KW (Kilowatts)</option>
+                            <option value="KVA">KVA (Kilovolt-Ampere)</option>
+                            <option value="VOLT">VOLT (Volts)</option>
+                            <option value="AMP">AMP (Amperes)</option>
+                            <option value="BTU">BTU (British Thermal Units)</option>
+                            <option value="CFM">CFM (Cubic Feet/Minute)</option>
+                            <option value="RPM">RPM (Revolutions/Minute)</option>
+                            <option value="MM">MM (Millimetres)</option>
+                            <option value="FT">FT (Feet)</option>
+                            <option value="INCH">INCH (Inches)</option>
+                            <option value="YD">YD (Yards)</option>
+                            <option value="GM">GM (Grammes)</option>
+                            <option value="LB">LB (Pounds)</option>
+                            <option value="OZ">OZ (Ounces)</option>
+                            <option value="KG">KG (Kilogramme)</option>
+                            <option value="ML">ML (Millilitres)</option>
+                            <option value="GAL">GAL (Gallons)</option>
+                            <option value="KIT">KIT (Kits)</option>
+                            <option value="PAIR">PAIR (Pairs)</option>
+                            <option value="ROLL">ROLL (Rolls)</option>
+                            <option value="SHEET">SHEET (Sheets)</option>
+                            <option value="COIL">COIL (Coils)</option>
+                            <option value="STRIP">STRIP (Strips)</option>
+                            <option value="TUBE">TUBE (Tubes)</option>
+                            <option value="PIPE">PIPE (Pipes)</option>
+                            <option value="LINE">LINE (Lines)</option>
+                            <option value="METER">METER (Meters)</option>
+                            <option value="CM">CM (Centimetres)</option>
+                            <option value="SQMTR">SQMTR (Square Metres)</option>
+                            <option value="SQFT">SQFT (Square Feet)</option>
+                            <option value="SQYD">SQYD (Square Yards)</option>
+                            <option value="CFT">CFT (Cubic Feet)</option>
+                            <option value="CBM">CBM (Cubic Metres)</option>
+                            <option value="HR">HR (Hours)</option>
+                            <option value="MIN">MIN (Minutes)</option>
+                            <option value="SEC">SEC (Seconds)</option>
+                            <option value="WK">WK (Weeks)</option>
+                            <option value="QTR">QTR (Quarters)</option>
+                            <option value="FORTNIGHT">FORTNIGHT (Fortnight)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.hsn-dropdown { position:absolute; z-index:1050; background:#1e293b; border:1px solid #475569; border-radius:6px; max-height:200px; overflow-y:auto; display:none; width:100%; }
+.hsn-dropdown .hsn-item { padding:8px 12px; cursor:pointer; font-size:0.85rem; color:#e2e8f0; border-bottom:1px solid #334155; }
+.hsn-dropdown .hsn-item:hover { background:#334155; }
+.hsn-dropdown .hsn-item .hsn-code { font-weight:700; color:#60a5fa; margin-right:8px; }
+.hsn-dropdown .hsn-item .hsn-desc { color:#94a3b8; }
+.hsn-dropdown .hsn-item.selected { background:#3b82f6; color:white; }
+</style>
+
+<script>
+var HSN_CODES = [
+    {code:'3917',desc:'Plastic tubes, pipes & fittings'},
+    {code:'3918',desc:'Plastic articles for sanitary use'},
+    {code:'3919',desc:'Plastic plates, sheets, film'},
+    {code:'3920',desc:'Other plastic plates, sheets'},
+    {code:'3921',desc:'Other plastic sheets, films'},
+    {code:'3922',desc:'Plastic baths, shower-baths, sinks'},
+    {code:'3923',desc:'Plastic articles for conveyance'},
+    {code:'3924',desc:'Plastic tableware, kitchenware'},
+    {code:'3925',desc:'Other plastic builders ware'},
+    {code:'3926',desc:'Other articles of plastics'},
+    {code:'4016',desc:'Other articles of vulcanised rubber'},
+    {code:'4421',desc:'Other articles of wood'},
+    {code:'4818',desc:'Toilet paper & similar articles'},
+    {code:'4823',desc:'Other articles of paper/paperboard'},
+    {code:'5208',desc:'Woven cotton fabrics'},
+    {code:'5407',desc:'Woven synthetic filament fabrics'},
+    {code:'6110',desc:'Jerseys, pullovers, cardigans (knitted)'},
+    {code:'6302',desc:'Bed linen, table linen, toilet linen'},
+    {code:'6802',desc:'Worked monumental/building stone'},
+    {code:'6907',desc:'Ceramic tiles & flags'},
+    {code:'7007',desc:'Safety glass (toughened/tempered)'},
+    {code:'7008',desc:'Multi-pane insulating glass units'},
+    {code:'7013',desc:'Glassware for table, kitchen, toilet'},
+    {code:'7214',desc:'Other bars/rods of iron/steel'},
+    {code:'7304',desc:'Tubes/pipes of stainless steel'},
+    {code:'7306',desc:'Other tubes/pipes of iron/steel'},
+    {code:'7308',desc:'Structures & parts of iron/steel'},
+    {code:'7318',desc:'Screws, bolts, nuts, washers of iron/steel'},
+    {code:'7321',desc:'Stoves, ranges, ovens of iron/steel'},
+    {code:'7322',desc:'Radiators for central heating'},
+    {code:'7323',desc:'Table/kitchen articles of iron/steel'},
+    {code:'7324',desc:'Sanitary ware of iron/steel'},
+    {code:'7403',desc:'Refined copper'},
+    {code:'7412',desc:'Copper tubes/pipe fittings'},
+    {code:'7418',desc:'Sanitary fittings of copper'},
+    {code:'7604',desc:'Aluminium bars, rods, profiles'},
+    {code:'7606',desc:'Aluminium plates, sheets, strips'},
+    {code:'7607',desc:'Aluminium foil'},
+    {code:'7608',desc:'Aluminium tubes/pipe fittings'},
+    {code:'7610',desc:'Aluminium structures & parts'},
+    {code:'7615',desc:'Aluminium table/kitchen articles'},
+    {code:'7616',desc:'Other articles of aluminium'},
+    {code:'8201',desc:'Hand tools (saws, knives, scissors)'},
+    {code:'8202',desc:'Hand saws, bandsaw blades'},
+    {code:'8203',desc:'Files, rasps, pliers, pincers'},
+    {code:'8204',desc:'Hand-operated spanners & wrenches'},
+    {code:'8205',desc:'Other hand tools'},
+    {code:'8301',desc:'Padlocks, locks, keys'},
+    {code:'8302',desc:'Base metal mountings, fittings'},
+    {code:'8305',desc:'Fittings for loose-leaf binders, clips'},
+    {code:'8311',desc:'Wire/rods of base metal for soldering'},
+    {code:'8414',desc:'Air/vacuum pumps, compressors, fans'},
+    {code:'8415',desc:'Air conditioning machines'},
+    {code:'8418',desc:'Refrigerators, freezers'},
+    {code:'8419',desc:'Machinery for heating/cooling'},
+    {code:'8421',desc:'Centrifuges, filtering/purifying machines'},
+    {code:'8422',desc:'Dish washing machines, bottling/packing machinery'},
+    {code:'8423',desc:'Weighing machinery, scales'},
+    {code:'8424',desc:'Spraying/dispersing machinery'},
+    {code:'8425',desc:'Block tackle, winches, capstans, jacks'},
+    {code:'8428',desc:'Lifting/handling machinery'},
+    {code:'8429',desc:'Self-propelled bulldozers, excavators'},
+    {code:'8430',desc:'Other earth-moving equipment'},
+    {code:'8431',desc:'Parts for lifting/handling machinery'},
+    {code:'8432',desc:'Agricultural/horticultural machinery'},
+    {code:'8433',desc:'Harvesting/threshing machinery'},
+    {code:'8434',desc:'Milking machines, dairy machinery'},
+    {code:'8435',desc:'Presses, crushers for wine/fruit'},
+    {code:'8436',desc:'Other agricultural machinery'},
+    {code:'8437',desc:'Machines for cleaning/sorting seed, grain'},
+    {code:'8438',desc:'Machinery for food processing'},
+    {code:'8440',desc:'Bookbinding machinery'},
+    {code:'8441',desc:'Other paper/paperboard working machinery'},
+    {code:'8442',desc:'Printing type, plates, cylinders'},
+    {code:'8443',desc:'Printing machinery, parts'},
+    {code:'8450',desc:'Washing machines'},
+    {code:'8451',desc:'Machinery for washing, drying, ironing'},
+    {code:'8462',desc:'Machine tools for forging/bending'},
+    {code:'8466',desc:'Parts for machine tools'},
+    {code:'8467',desc:'Hand tools, pneumatic, hydraulic'},
+    {code:'8468',desc:'Machinery for soldering/brazing'},
+    {code:'8471',desc:'Automatic data processing machines (computers)'},
+    {code:'8473',desc:'Parts for office machines/computers'},
+    {code:'8479',desc:'Machines with individual functions NES'},
+    {code:'8481',desc:'Taps, cocks, valves for pipes'},
+    {code:'8483',desc:'Transmission shafts, gears, gearings'},
+    {code:'8484',desc:'Gaskets, sets of different materials'},
+    {code:'8485',desc:'Machinery parts NES'},
+    {code:'8501',desc:'Electric motors and generators'},
+    {code:'8502',desc:'Electric generating sets'},
+    {code:'8503',desc:'Parts for electric motors/generators'},
+    {code:'8504',desc:'Electrical transformers, static converters'},
+    {code:'8505',desc:'Electromagnets, permanent magnets'},
+    {code:'8506',desc:'Primary cells and primary batteries'},
+    {code:'8507',desc:'Electric accumulators (batteries)'},
+    {code:'8508',desc:'Vacuum cleaners'},
+    {code:'8509',desc:'Electromechanical domestic appliances'},
+    {code:'8510',desc:'Shavers, hair clippers'},
+    {code:'8511',desc:'Ignition/starter equipment for engines'},
+    {code:'8512',desc:'Lighting/signal equipment for vehicles'},
+    {code:'8513',desc:'Portable electric lamps'},
+    {code:'8514',desc:'Electric furnaces, ovens'},
+    {code:'8515',desc:'Electric soldering/heat treating machines'},
+    {code:'8516',desc:'Electric water/space heaters, hair dryers'},
+    {code:'8517',desc:'Telephone sets, smartphones, network equipment'},
+    {code:'8518',desc:'Microphones, loudspeakers, headphones, amplifiers'},
+    {code:'8519',desc:'Sound recording/reproducing apparatus'},
+    {code:'8520',desc:'Magnetic/optical disc recorders'},
+    {code:'8521',desc:'Video recording/reproducing apparatus'},
+    {code:'8523',desc:'Discs, tapes, USB drives, memory cards'},
+    {code:'8525',desc:'Transmission apparatus (cameras, radio, TV)'},
+    {code:'8526',desc:'Radar, radio navigation/remote control apparatus'},
+    {code:'8527',desc:'Reception apparatus for radio'},
+    {code:'8528',desc:'Monitors, projectors, TVs'},
+    {code:'8529',desc:'Parts for TVs, monitors, cameras'},
+    {code:'8531',desc:'Electric sound/visual signalling apparatus'},
+    {code:'8532',desc:'Electrical capacitors'},
+    {code:'8533',desc:'Electrical resistors'},
+    {code:'8534',desc:'Printed circuits'},
+    {code:'8535',desc:'Electrical switches/fuses >1000V'},
+    {code:'8536',desc:'Electrical switches/fuses <=1000V'},
+    {code:'8537',desc:'Boards, consoles for electric control'},
+    {code:'8538',desc:'Parts for switches/fuses/boards'},
+    {code:'8539',desc:'Electric lamps/tubes (LED, CFL, incandescent)'},
+    {code:'8540',desc:'Thermionic/cold cathode valves/tubes'},
+    {code:'8541',desc:'Semiconductor devices, LEDs, solar cells'},
+    {code:'8542',desc:'Electronic integrated circuits'},
+    {code:'8543',desc:'Electrical machines with individual functions NES'},
+    {code:'8544',desc:'Insulated wire, cable, optical fibre'},
+    {code:'8545',desc:'Carbon electrodes, brushes, lamps'},
+    {code:'8546',desc:'Electrical insulators of glass/ceramic'},
+    {code:'8547',desc:'Insulating fittings of plastics'},
+    {code:'8548',desc:'Electrical parts NES'},
+    {code:'8708',desc:'Motor vehicle parts & accessories'},
+    {code:'9001',desc:'Optical fibres, lenses, prisms'},
+    {code:'9004',desc:'Eyeglasses, goggles'},
+    {code:'9013',desc:'LCD/LED/OLED display panels'},
+    {code:'9018',desc:'Medical instruments & appliances'},
+    {code:'9022',desc:'X-ray apparatus'},
+    {code:'9025',desc:'Thermometers, barometers, hygrometers'},
+    {code:'9026',desc:'Flow/level measuring instruments'},
+    {code:'9027',desc:'Physical/chemical analysis instruments'},
+    {code:'9028',desc:'Gas/liquid supply meters'},
+    {code:'9030',desc:'Oscilloscopes, spectrum analysers'},
+    {code:'9401',desc:'Seats & chairs (including car seats)'},
+    {code:'9403',desc:'Other furniture & parts'},
+    {code:'9404',desc:'Mattress supports, mattresses, sleeping bags'},
+    {code:'9405',desc:'Lamps & lighting fittings'},
+    {code:'9406',desc:'Prefabricated buildings'},
+    {code:'9503',desc:'Toys, games, sports requisites'},
+    {code:'9608',desc:'Ball-point pens, felt-tipped pens'},
+    {code:'9609',desc:'Pencils, crayons, chalk'},
+    {code:'9613',desc:'Cigarette lighters, sparker lighters'},
+    {code:'9616',desc:'Scent sprays, powder-puffs'},
+    {code:'9617',desc:'Vacuum flasks, parts thereof'},
+    {code:'9618',desc:'Tailors’ dummies, mannequins'},
+    {code:'9619',desc:'Sanitary towels, diapers, tampons'},
+    {code:'9954',desc:'Construction services'},
+    {code:'9961',desc:'Financial services'},
+    {code:'9962',desc:'Insurance services'},
+    {code:'9963',desc:'Real estate services'},
+    {code:'9964',desc:'Rental/leasing services'},
+    {code:'9965',desc:'Transport services'},
+    {code:'9966',desc:'Postal/courier services'},
+    {code:'9967',desc:'Telecom services'},
+    {code:'9968',desc:'IT/ITES services'},
+    {code:'9969',desc:'Research & development services'},
+    {code:'9970',desc:'Professional/consulting services'},
+    {code:'9971',desc:'Technical testing & analysis'},
+    {code:'9972',desc:'Management services'},
+    {code:'9973',desc:'Advertising services'},
+    {code:'9974',desc:'Printing/publishing services'},
+    {code:'9975',desc:'Support services to agriculture'},
+    {code:'9976',desc:'Mining support services'},
+    {code:'9977',desc:'Electricity/gas/steam/AC supply'},
+    {code:'9978',desc:'Water supply, sewerage, waste treatment'},
+    {code:'9979',desc:'Education services'},
+    {code:'9980',desc:'Health services'},
+    {code:'9981',desc:'Ambulance services'},
+    {code:'9982',desc:'Entertainment services'},
+    {code:'9983',desc:'Library, archive, museum services'},
+    {code:'9984',desc:'Recreational/sports services'},
+    {code:'9985',desc:'Support services NES'},
+    {code:'9986',desc:'Government services'},
+    {code:'9987',desc:'International organisations services'},
+    {code:'9988',desc:'Manufacturing services on physical inputs'},
+    {code:'9989',desc:'Other manufacturing services'},
+    {code:'9991',desc:'Public administration services'},
+    {code:'9992',desc:'Remuneration of Staff'},
+    {code:'9993',desc:'Production of government services'},
+    {code:'9994',desc:'Services of households as employers'},
+    {code:'9995',desc:'Services of self-employed households'},
+    {code:'9996',desc:'Imputed rental services'},
+    {code:'9997',desc:'Other services NES'}
+];
+
+function filterHSN(input, listId) {
+    var val = input.value.toLowerCase().trim();
+    var list = document.getElementById(listId);
+    if (!list) return;
+    if (val.length < 1) { list.style.display = 'none'; list.innerHTML = ''; return; }
+    var matches = HSN_CODES.filter(function(h) { return h.code.indexOf(val) !== -1 || h.desc.toLowerCase().indexOf(val) !== -1; }).slice(0, 20);
+    if (matches.length === 0) { list.style.display = 'none'; list.innerHTML = ''; return; }
+    list.innerHTML = matches.map(function(h) {
+        return '<div class="hsn-item" onclick="selectHSN(this,\'' + listId + '\',\'' + h.code + '\')"><span class="hsn-code">' + h.code + '</span><span class="hsn-desc">' + h.desc + '</span></div>';
+    }).join('');
+    list.style.display = 'block';
+}
+
+function selectHSN(el, listId, code) {
+    var list = document.getElementById(listId);
+    var input = list.previousElementSibling;
+    input.value = code;
+    list.style.display = 'none';
+    list.innerHTML = '';
+    var items = list.parentElement.querySelectorAll('.hsn-item');
+    items.forEach(function(i) { i.classList.remove('selected'); });
+    el.classList.add('selected');
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.hsn-dropdown') && !e.target.closest('[id^="hsnSearch"]')) {
+        document.querySelectorAll('.hsn-dropdown').forEach(function(d) { d.style.display = 'none'; });
+    }
+});
+</script>
+{% endblock %}

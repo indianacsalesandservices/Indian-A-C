@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting... - Complaints</title>
+  <style>
+    body {
+      margin: 0; min-height: 100vh;
+      background: linear-gradient(135deg, #0a0a2e, #1a1a4e, #2d1b69);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Segoe UI', sans-serif; color: #fff;
+    }
+    .msg { text-align: center; }
+    .msg h2 { font-size: 1.2rem; opacity: 0.7; margin-bottom: 12px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #c44dff; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    a { color: #c44dff; }
+  </style>
+</head>
+<body>
+  <div class="msg">
+    <div class="spinner"></div>
+    <h2>Redirecting to portal...</h2>
+    <p>If not redirected, <a href="../index.html">click here</a></p>
+  </div>
+  <script>
+    (function() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var ssoUser = urlParams.get('u');
+      var ssoRole = urlParams.get('r');
+
+      if (ssoUser) {
+        var role = ssoRole === 'admin' ? 'admin' : 'user';
+        sessionStorage.setItem('iacss_logged_in', 'true');
+        sessionStorage.setItem('iacss_user_name', ssoUser);
+        sessionStorage.setItem('iacss_login_id', 'INDIAN A/C');
+        sessionStorage.setItem('iacss_role', role);
+        sessionStorage.setItem('iacss_unified_session', JSON.stringify({
+          username: ssoUser, role: role, fullName: ssoUser,
+          loginTime: new Date().toISOString()
+        }));
+      }
+
+      if (sessionStorage.getItem('iacss_logged_in') === 'true') {
+        window.location.href = 'welcome.html';
+      } else {
+        window.location.href = '/index.html';
+      }
+    })();
+  </script>
+</body>
+</html>

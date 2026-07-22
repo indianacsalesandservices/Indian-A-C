@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indian A/C Sales and Services</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="stylesheet" href="styles.css?v=3" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body data-page="pending">
+  <header>
+    <div class="brand">
+      <img src="logo.png" alt="Indian A/C Logo" class="brand-logo" />
+      <div class="brand-text">
+        <h1 data-i18n="app.title">Indian A/C Sales and Services</h1>
+      </div>
+      <div class="brand-info">
+        <span id="live-date"></span>
+        <span id="live-time"></span>
+        <button id="langSwitcher" class="lang-toggle" type="button" aria-label="Switch language" title="Switch language"><span class="lang-icon">&#127760;</span><span class="lang-text">EN</span></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="top-nav">
+    <a class="nav-btn" href="welcome.html" data-i18n="nav.home">Home</a>
+    <a class="nav-btn" href="complaint.html" data-i18n="nav.new">New Entry</a>
+    <a class="nav-btn" href="pending.html" data-i18n="nav.pending">Pending Works</a>
+    <a class="nav-btn" href="completed.html" data-i18n="nav.completed">Completed Works</a>
+  </nav>
+
+  <main>
+    <section class="pending-section">
+      <div class="section-header">
+        <h2 data-i18n="pending.title">Pending Works</h2>
+        <div class="header-actions">
+          <button id="downloadAllPending" class="btn btn-pdf-all btn-outline" data-i18n="common.downloadAllPdf">Download All PDFs</button>
+          <button id="shareAllPendingWa" class="btn btn-share-wa-all btn-share-wa" data-i18n="common.shareAllWa">Share All WhatsApp</button>
+        </div>
+      </div>
+      <p class="hint" data-i18n-html="pending.hint">Works in progress — entries older than <strong>1 day</strong> are highlighted in <span style="color:#e53935;font-weight:600;">red</span>.</p>
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <label class="toolbar-label" data-i18n="common.sortBy">Sort by:</label>
+          <select id="sortSelect" class="toolbar-select">
+            <option value="date-desc" data-i18n="common.sortDateDesc">Date (Newest)</option>
+            <option value="date-asc" data-i18n="common.sortDateAsc">Date (Oldest)</option>
+            <option value="name-asc" data-i18n="common.sortNameAsc">Name (A-Z)</option>
+            <option value="name-desc" data-i18n="common.sortNameDesc">Name (Z-A)</option>
+          </select>
+        </div>
+        <div class="toolbar-group">
+          <label class="toolbar-label" data-i18n="common.dateFrom">From:</label>
+          <input type="date" id="dateFrom" class="toolbar-input" />
+          <label class="toolbar-label" data-i18n="common.dateTo">To:</label>
+          <input type="date" id="dateTo" class="toolbar-input" />
+        </div>
+        <div class="toolbar-group">
+          <button id="printPage" class="btn btn-print" data-i18n="common.print">Print</button>
+        </div>
+      </div>
+      <div id="pendingList" class="pending-list">
+        <p class="empty-msg" data-i18n="pending.empty">No pending works.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p data-i18n="app.copyright">&copy; 2026 Indian A/C Sales and Services</p>
+    <p class="tech-support" data-i18n="app.support">Tech support: Tony 6385691188</p>
+  </footer>
+
+  <script src="app.js?v=3"></script>
+</body>
+</html>

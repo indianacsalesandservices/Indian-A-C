@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Company Settings - {{ company.company_name }}{% endblock %}
+{% block page_title %}<strong>Company Settings</strong>{% endblock %}
+
+{% block content %}
+<form method="POST" action="{{ url_for('company_settings') }}" enctype="multipart/form-data">
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Company Information</h6></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Company Name *</label>
+                        <input type="text" class="form-control" name="company_name" value="{{ company.company_name or '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tagline</label>
+                        <input type="text" class="form-control" name="tagline" value="{{ company.tagline or '' }}" placeholder="Billing & Invoice System">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" name="address" rows="2">{{ company.address or '' }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">City</label>
+                        <input type="text" class="form-control" name="city" value="{{ company.city or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">State</label>
+                        <input type="text" class="form-control" name="state" value="{{ company.state or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Pincode</label>
+                        <input type="text" class="form-control" name="pincode" value="{{ company.pincode or '' }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" name="phone" value="{{ company.phone or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" value="{{ company.email or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Website</label>
+                        <input type="text" class="form-control" name="website" value="{{ company.website or '' }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Tax & Registration</h6></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">GSTIN</label>
+                        <input type="text" class="form-control" name="gstin" value="{{ company.gstin or '' }}" maxlength="15" placeholder="22AAAAA0000A1Z5">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">PAN</label>
+                        <input type="text" class="form-control" name="pan" value="{{ company.pan or '' }}" maxlength="10" placeholder="AAAAA0000A">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Billing Defaults</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Default Billing Address</label>
+                    <textarea class="form-control" name="billing_address" rows="2">{{ company.billing_address or '' }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Default Shipping Address</label>
+                    <textarea class="form-control" name="shipping_address" rows="2">{{ company.shipping_address or '' }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Default Place of Supply</label>
+                    <input type="text" class="form-control" name="place_of_supply" value="{{ company.place_of_supply or '' }}" placeholder="e.g. Tamil Nadu">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Company Logo</h6></div>
+            <div class="card-body text-center">
+                {% set logo_path = 'uploads/' + (company.logo_filename if company and company.logo_filename else 'logo.svg') %}
+                <div class="mb-3">
+                    <img src="{{ url_for('static', filename=logo_path) }}" alt="Company Logo"
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><rect fill=%22%234361ee%22 width=%22120%22 height=%22120%22 rx=%2212%22/><text x=%2260%22 y=%2270%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2240%22 font-weight=%22bold%22>C</text></svg>'"
+                         style="max-height: 120px; max-width: 100%; border: 2px dashed #444; border-radius: 12px; padding: 10px;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Upload New Logo</label>
+                    <input type="file" class="form-control" name="logo" accept="image/png,image/jpg,image/jpeg,image/svg+xml,image/webp">
+                    <small class="text-muted">Recommended: 300x150px PNG with transparent background</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Preview</h6></div>
+            <div class="card-body">
+                <div class="text-center p-3 bg-body-secondary rounded">
+                    <img src="{{ url_for('static', filename=logo_path) }}" alt="Logo"
+                         onerror="this.style.display='none'" style="max-height: 50px;" class="mb-2">
+                    <h6 class="mb-0">{{ company.company_name if company else 'Indian A/C Sales and Services' }}</h6>
+                    <small class="text-muted"><b>{{ company.tagline if company else '' }}</b></small>
+                    {% if company and company.gstin %}
+                    <br><small>GSTIN: {{ company.gstin }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2">
+            <i class="bi bi-check-circle"></i> Save Company Settings
+        </button>
+    </div>
+</div>
+</form>
+{% endblock %}

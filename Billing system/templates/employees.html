@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+{% block title %}Staff - Billing{% endblock %}
+{% block page_title %}<strong>Staff Management</strong>{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h6 class="mb-0">Total Staff: <span id="empCount">0</span></h6>
+</div>
+
+<div class="row g-3" id="employeeCards"></div>
+<div class="col-12 text-center text-muted py-5" id="noData" style="display:none;">No staff found. Add staff from the <a href="/employees/">Staff Management</a> page.</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var employees = [];
+    try {
+        var raw = localStorage.getItem('iacss_employees_v1');
+        if (raw) employees = JSON.parse(raw);
+    } catch(e) {}
+
+    document.getElementById('empCount').textContent = employees.length;
+
+    if (employees.length === 0) {
+        document.getElementById('noData').style.display = '';
+        return;
+    }
+
+    var container = document.getElementById('employeeCards');
+    employees.forEach(function(emp) {
+        var initials = (emp.fullName || 'NA').split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+        var statusBadge = emp.status === 'active'
+            ? '<span class="badge bg-success">Active</span>'
+            : '<span class="badge bg-danger">Inactive</span>';
+        var html = '<div class="col-xl-4 col-md-6">' +
+            '<div class="card h-100">' +
+            '<div class="card-body">' +
+            '<div class="d-flex align-items-center mb-3">' +
+            '<div class="avatar-circle me-3">' + initials + '</div>' +
+            '<div>' +
+            '<h6 class="mb-0">' + (emp.fullName || '-') + '</h6>' +
+            '<small class="text-muted">' + (emp.employeeId || '-') + ' &middot; ' + statusBadge + '</small>' +
+            '</div>' +
+            '</div>' +
+            '<table class="table table-sm table-borderless mb-0">' +
+            '<tr><td class="text-muted">Job Title</td><td>' + (emp.jobTitle || '-') + '</td></tr>' +
+            '<tr><td class="text-muted">Type</td><td>' + (emp.employmentType || '-') + '</td></tr>' +
+            '<tr><td class="text-muted">Qualification</td><td>' + (emp.qualification || '-') + '</td></tr>' +
+            '<tr><td class="text-muted">Joined</td><td>' + (emp.dateOfJoining || '-') + '</td></tr>' +
+            '<tr><td class="text-muted">Phone</td><td>' + (emp.phone || '-') + '</td></tr>' +
+            '<tr><td class="text-muted">Location</td><td>' + (emp.workLocation || '-') + '</td></tr>' +
+            '</table>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        container.insertAdjacentHTML('beforeend', html);
+    });
+})();
+</script>
+{% endblock %}

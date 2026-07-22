@@ -1,0 +1,982 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Management - Indian A/C</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/mic-btn.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --radius: 12px;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-right { display: flex; gap: 8px; }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .search-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .search-bar input, .search-bar select {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+        .search-bar input:focus, .search-bar select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .employee-table {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .employee-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .employee-table th {
+            background: rgba(99,102,241,0.1);
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary-light);
+        }
+        .employee-table td {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .employee-table tr:hover td { background: rgba(99,102,241,0.05); }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-active { background: rgba(16,185,129,0.15); color: var(--success); }
+        .badge-inactive { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .emp-name { font-weight: 600; }
+        .emp-id { color: var(--text-muted); font-size: 0.8rem; }
+
+        .download-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .download-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .download-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .date-range {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .date-range input {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+        .date-range input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .report-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        .report-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .report-card h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+        .report-card p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .report-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .report-actions button {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .report-actions button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .report-actions button.pdf:hover { background: #ef4444; border-color: #ef4444; }
+
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 800px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 1.2rem; }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        .modal-close:hover { color: var(--danger); }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 24px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-title:first-child { margin-top: 0; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+        .form-group label .required { color: var(--danger); }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-group input[readonly] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .form-group select option { background: var(--bg-input); }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .file-upload:hover { border-color: var(--primary); }
+        .file-upload input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-upload .upload-icon { font-size: 1.5rem; color: var(--text-muted); }
+        .file-upload .upload-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        .file-upload.has-file { border-color: var(--success); }
+        .file-upload.has-file .upload-text { color: var(--success); }
+
+        .emp-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .detail-item { padding: 8px 0; }
+        .detail-item .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .detail-item .detail-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .no-data i { font-size: 3rem; margin-bottom: 12px; display: block; }
+
+        .action-btns { display: flex; gap: 4px; }
+        .action-btns button {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .action-btns button:hover { border-color: var(--primary); color: var(--primary); }
+        .action-btns button.delete:hover { border-color: var(--danger); color: var(--danger); }
+
+        @media (max-width: 1024px) {
+            .report-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .form-row { grid-template-columns: 1fr; }
+            .emp-detail-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 12px; text-align: center; }
+            .header-left { justify-content: center; }
+            .header-right { width: 100%; justify-content: center; }
+            .header-right .btn { flex: 1; justify-content: center; }
+            .stats-bar { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card { padding: 14px; }
+            .stat-card .stat-value { font-size: 1.5rem; }
+            .search-bar { flex-direction: column; }
+            .search-bar input, .search-bar select { width: 100%; min-width: auto; }
+            .report-grid { grid-template-columns: 1fr; }
+            .download-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .date-range { width: 100%; }
+            .date-range input { flex: 1; }
+            .employee-table th, .employee-table td { padding: 8px 10px; font-size: 0.78rem; }
+            .employee-table th:nth-child(6), .employee-table td:nth-child(6) { display: none; }
+            .action-btns { flex-direction: column; gap: 2px; }
+            .modal { max-width: 100%; margin: 0 10px; }
+            .file-upload { padding: 12px; }
+        }
+        @media (max-width: 480px) {
+            .container { padding: 10px; }
+            .header { padding: 12px 14px; }
+            .header h1 { font-size: 1rem; }
+            .stats-bar { grid-template-columns: 1fr 1fr; gap: 6px; }
+            .stat-card { padding: 10px; }
+            .stat-card .stat-value { font-size: 1.2rem; }
+            .stat-card .stat-label { font-size: 0.65rem; }
+            .employee-table th, .employee-table td { padding: 6px 6px; font-size: 0.7rem; }
+            .employee-table th:nth-child(3), .employee-table td:nth-child(3) { display: none; }
+            .employee-table th:nth-child(7), .employee-table td:nth-child(7) { display: none; }
+            .emp-name { font-size: 0.8rem; }
+            .badge { font-size: 0.6rem; padding: 2px 6px; }
+            .btn { font-size: 0.75rem; padding: 6px 10px; }
+            .btn-sm { font-size: 0.7rem; padding: 4px 8px; }
+            .form-group label { font-size: 0.78rem; }
+            .form-group input, .form-group select, .form-group textarea { font-size: 0.82rem; padding: 8px 10px; }
+            .download-section { padding: 14px; }
+            .report-card { padding: 12px; }
+            .report-card h4 { font-size: 0.8rem; }
+            .report-card p { font-size: 0.7rem; }
+            .report-actions button { font-size: 0.7rem; padding: 4px 8px; }
+            .modal-header { padding: 14px 16px; }
+            .modal-header h2 { font-size: 1rem; }
+            .modal-body { padding: 16px; }
+            .modal-footer { padding: 12px 16px; flex-direction: column; }
+            .modal-footer .btn { width: 100%; justify-content: center; }
+            .section-title { font-size: 0.78rem; margin: 16px 0 12px; }
+            .detail-item .detail-label { font-size: 0.65rem; }
+            .detail-item .detail-value { font-size: 0.82rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <a href="/index.html" style="color:var(--text-muted);text-decoration:none;font-size:1.2rem;"><i class="bi bi-arrow-left-circle"></i></a>
+            <img src="/logo.png" alt="Logo" style="width:32px;height:32px;border-radius:8px;" onerror="this.style.display='none'">
+            <h1><i class="bi bi-people-fill"></i> Staff Management</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> Add Staff</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Staff</div></div>
+            <div class="stat-card"><div class="stat-value" id="statActive">0</div><div class="stat-label">Active</div></div>
+            <div class="stat-card"><div class="stat-value" id="statInactive">0</div><div class="stat-label">Inactive</div></div>
+        </div>
+
+        <div class="download-section">
+            <div class="download-header">
+                <h3><i class="bi bi-download"></i> Download Options</h3>
+                <div class="date-range">
+                    <label style="font-size:0.8rem;color:var(--text-muted);">From</label>
+                    <input type="date" id="dlFrom">
+                    <label style="font-size:0.8rem;color:var(--text-muted);">To</label>
+                    <input type="date" id="dlTo">
+                    <button class="btn btn-sm btn-primary" onclick="setTodayRange()"><i class="bi bi-calendar-check"></i> Today</button>
+                    <button class="btn btn-sm btn-outline" onclick="setMonthRange()"><i class="bi bi-calendar-month"></i> This Month</button>
+                </div>
+            </div>
+
+            <div class="report-grid">
+                <div class="report-card">
+                    <h4><i class="bi bi-clock-history"></i> Daily Working Hours</h4>
+                    <p>Check-in/check-out times and total working hours per staff per day</p>
+                    <div class="report-actions">
+                        <button onclick="viewReport('working-hours')"><i class="bi bi-eye"></i> View</button>
+                        <button class="pdf" onclick="downloadReport('working-hours','pdf')"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <h4><i class="bi bi-person-badge"></i> Staff Details</h4>
+                    <p>Complete staff directory with personal and employment information</p>
+                    <div class="report-actions">
+                        <button onclick="viewReport('employee-details')"><i class="bi bi-eye"></i> View</button>
+                        <button class="pdf" onclick="downloadReport('employee-details','pdf')"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <h4><i class="bi bi-clipboard-check"></i> Attendance Sheet</h4>
+                    <p>Full attendance records with In/Out status, time, and location</p>
+                    <div class="report-actions">
+                        <button onclick="viewReport('attendance-sheet')"><i class="bi bi-eye"></i> View</button>
+                        <button class="pdf" onclick="downloadReport('attendance-sheet','pdf')"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+
+                    </div>
+                </div>
+
+                <div class="report-card" style="border-color:var(--primary);background:rgba(99,102,241,0.08);">
+                    <h4><i class="bi bi-file-earmark-zip"></i> Download All Reports</h4>
+                    <p>Daily Working Hours + Staff Details + Attendance Sheet in a single file</p>
+                    <div class="report-actions">
+                        <button onclick="viewReport('all')"><i class="bi bi-eye"></i> View All</button>
+                        <button class="pdf" onclick="downloadReport('all','pdf')"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search by Staff Name, ID, Date, Status..." oninput="renderTable()">
+            <select id="filterStatus" onchange="renderTable()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+            <select id="filterType" onchange="renderTable()">
+                <option value="">All Types</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Intern">Intern</option>
+            </select>
+        </div>
+
+        <div class="employee-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>ID</th>
+                        <th>Phone</th>
+                        <th>Job Title</th>
+                        <th>Type</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="employeeTable"></tbody>
+            </table>
+            <div class="no-data" id="noData" style="display:none;">
+                <i class="bi bi-people"></i>
+                <p>No staff found</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="formModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="formTitle">Add Staff</h2>
+                <button class="modal-close" onclick="closeFormModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <div class="section-title">Personal Information</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Legal Name <span class="required">*</span></label>
+                        <input type="text" id="f-fullName" placeholder="Enter full legal name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth <span class="required">*</span></label>
+                        <input type="date" id="f-dob" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone Number <span class="required">*</span></label>
+                        <input type="tel" id="f-phone" placeholder="Enter phone number" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Emergency Contact Number <span class="required">*</span></label>
+                        <input type="tel" id="f-emergency" placeholder="Enter emergency contact" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Home Address <span class="required">*</span></label>
+                    <textarea id="f-address" placeholder="Enter full home address" required></textarea>
+                </div>
+
+                <div class="section-title">Employment Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Employee ID (Auto-generated)</label>
+                        <input type="text" id="f-empId" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Job Title <span class="required">*</span></label>
+                        <input type="text" id="f-jobTitle" placeholder="e.g. AC Technician" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Qualification <span class="required">*</span></label>
+                        <select id="f-qualification" required>
+                            <option value="">Select qualification</option>
+                            <option value="10th">10th</option>
+                            <option value="12th">12th</option>
+                            <option value="ITI">ITI</option>
+                            <option value="Diploma">Diploma</option>
+                            <option value="Bachelor's Degree">Bachelor's Degree</option>
+                            <option value="Master's Degree">Master's Degree</option>
+                            <option value="PhD">PhD</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Employment Type <span class="required">*</span></label>
+                        <select id="f-empType" required>
+                            <option value="">Select type</option>
+                            <option value="Full-time">Full-time</option>
+                            <option value="Part-time">Part-time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Intern">Intern</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date of Joining <span class="required">*</span></label>
+                        <input type="date" id="f-doj" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Work Location</label>
+                        <input type="text" id="f-location" value="Kovilpatti Head Office">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Languages Known <span class="required">*</span></label>
+                        <input type="text" id="f-languages" placeholder="e.g. English, Hindi" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="f-status">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-title">Document Uploads</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Aadhaar Card <span class="required">*</span></label>
+                        <div class="file-upload" id="aadhaarUpload">
+                            <input type="file" accept=".jpg,.jpeg,.png,.pdf" onchange="handleFile(this,'aadhaar')">
+                            <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                            <div class="upload-text">No file chosen</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Qualification Certificate <span class="required">*</span></label>
+                        <div class="file-upload" id="qualUpload">
+                            <input type="file" accept=".jpg,.jpeg,.png,.pdf" onchange="handleFile(this,'qual')">
+                            <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                            <div class="upload-text">No file chosen</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeFormModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEmployee()"><i class="bi bi-check-lg"></i> Save Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Modal -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal" style="max-width:700px;">
+            <div class="modal-header">
+                <h2>Staff Details</h2>
+                <button class="modal-close" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="viewContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeViewModal()">Close</button>
+                <button class="btn btn-primary" id="viewEditBtn" onclick=""><i class="bi bi-pencil"></i> Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Preview Modal -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal" style="max-width:950px;">
+            <div class="modal-header">
+                <h2 id="reportTitle">Report</h2>
+                <button class="modal-close" onclick="document.getElementById('reportModal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body" id="reportContent" style="max-height:60vh;overflow-y:auto;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="document.getElementById('reportModal').classList.remove('active')">Close</button>
+                <button class="btn btn-sm pdf" onclick="downloadReport(currentReportType,'pdf')" style="background:#ef4444;color:white;"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        var currentReportType = '';
+
+        function esc(str) {
+            var div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function getDateRange() {
+            return {
+                from: document.getElementById('dlFrom').value,
+                to: document.getElementById('dlTo').value
+            };
+        }
+
+        function setTodayRange() {
+            var today = new Date().toISOString().split('T')[0];
+            document.getElementById('dlFrom').value = today;
+            document.getElementById('dlTo').value = today;
+        }
+
+        function setMonthRange() {
+            var now = new Date();
+            var first = new Date(now.getFullYear(), now.getMonth(), 1);
+            document.getElementById('dlFrom').value = first.toISOString().split('T')[0];
+            document.getElementById('dlTo').value = now.toISOString().split('T')[0];
+        }
+
+        function getFilteredAttendance() {
+            var range = getDateRange();
+            var att = [];
+            try { var d = localStorage.getItem('ams_attendance'); if (d) att = JSON.parse(d); } catch(e) {}
+            if (!att.length) {
+                try { var d2 = localStorage.getItem('iacss_attendance'); if (d2) att = JSON.parse(d2); } catch(e) {}
+            }
+            if (!att.length) {
+                try { var keys = Object.keys(localStorage); for (var i = 0; i < keys.length; i++) { if (keys[i].indexOf('attendance') !== -1 && keys[i].indexOf('employee') === -1) { var d3 = localStorage.getItem(keys[i]); if (d3) { var parsed = JSON.parse(d3); if (Array.isArray(parsed) && parsed.length) { att = parsed; break; } } } } } catch(e) {}
+            }
+            return att.filter(function(r) {
+                if (range.from && r.date < range.from) return false;
+                if (range.to && r.date > range.to) return false;
+                return true;
+            });
+        }
+
+        function getReportData(type) {
+            var employees = [];
+            try { var d = localStorage.getItem('iacss_employees_v1'); employees = d ? JSON.parse(d) : []; } catch(e) {}
+            var attendance = getFilteredAttendance();
+            var range = getDateRange();
+            var search = (document.getElementById('searchInput').value || '').toLowerCase();
+
+            if (type === 'working-hours' || type === 'all') {
+                var empMap = {};
+                employees.forEach(function(e) { empMap[e.employeeId] = e; });
+                var dayMap = {};
+                attendance.forEach(function(r) {
+                    var key = r.employeeId + '|' + r.date;
+                    if (!dayMap[key]) dayMap[key] = { name: r.employeeName, id: r.employeeId, date: r.date, ins: [], outs: [] };
+                    if (r.status === 'In Time') dayMap[key].ins.push(r.time);
+                    else dayMap[key].outs.push(r.time);
+                });
+                var whRows = Object.values(dayMap).sort(function(a,b) { return (b.date+a.id).localeCompare(a.date+b.id); });
+                whRows = whRows.map(function(row) {
+                    var inTime = row.ins.length ? row.ins.sort()[0] : '-';
+                    var outTime = row.outs.length ? row.outs.sort().reverse()[0] : '-';
+                    var hours = '-';
+                    if (row.ins.length && row.outs.length) {
+                        var inM = parseInt(inTime.split(':')[0])*60 + parseInt(inTime.split(':')[1]);
+                        var outM = parseInt(outTime.split(':')[0])*60 + parseInt(outTime.split(':')[1]);
+                        var diff = outM - inM;
+                        hours = diff > 0 ? Math.floor(diff/60) + 'h ' + (diff%60) + 'm' : '-';
+                    }
+                    return { name: row.name, id: row.id, date: row.date, checkIn: inTime, checkOut: outTime, hours: hours };
+                });
+                if (search) whRows = whRows.filter(function(r) { return (r.name+r.id+r.date).toLowerCase().indexOf(search) !== -1; });
+            }
+
+            if (type === 'employee-details' || type === 'all') {
+                var empRows = employees.map(function(e) {
+                    return { name: e.fullName, id: e.employeeId, phone: e.phone, job: e.jobTitle, type: e.employmentType, qual: e.qualification, doj: e.dateOfJoining, status: e.status };
+                });
+                if (search) empRows = empRows.filter(function(r) { return (r.name+r.id+r.phone+r.job).toLowerCase().indexOf(search) !== -1; });
+            }
+
+            if (type === 'attendance-sheet' || type === 'all') {
+                var atRows = attendance.map(function(r) {
+                    return { name: r.employeeName, id: r.employeeId, date: r.date, status: r.status, time: r.time, location: (r.location || '-').substring(0, 40) };
+                }).sort(function(a,b) { return (b.date+a.name).localeCompare(a.date+b.name); });
+                if (search) atRows = atRows.filter(function(r) { return (r.name+r.id+r.date+r.status).toLowerCase().indexOf(search) !== -1; });
+            }
+
+            return { workingHours: whRows || [], employeeDetails: empRows || [], attendanceSheet: atRows || [], range: range };
+        }
+
+        function viewReport(type) {
+            currentReportType = type;
+            var data = getReportData(type);
+            var html = '';
+            var titles = { 'working-hours': 'Daily Working Hours', 'employee-details': 'Staff Details', 'attendance-sheet': 'Attendance Sheet', 'all': 'All Reports' };
+            document.getElementById('reportTitle').textContent = titles[type] || 'Report';
+            html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;">Period: ' + (data.range.from || 'All') + ' to ' + (data.range.to || 'All') + '</p>';
+
+            var hasAnyData = false;
+
+            if (type === 'working-hours' || type === 'all') {
+                var whData = data.workingHours || [];
+                if (whData.length) hasAnyData = true;
+                html += '<h4 style="font-size:0.9rem;margin:16px 0 8px;color:var(--primary-light);"><i class="bi bi-clock-history"></i> Daily Working Hours</h4>';
+                if (!whData.length) {
+                    html += '<div style="text-align:center;padding:24px;color:var(--text-muted);background:var(--bg-input);border-radius:8px;margin-bottom:12px;"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No working hours records found. Mark attendance first to see data here.</div>';
+                } else {
+                    html += '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><thead><tr>';
+                    ['Employee','ID','Date','Check-In','Check-Out','Hours'].forEach(function(h) { html += '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--primary-light);font-size:0.75rem;">'+h+'</th>'; });
+                    html += '</tr></thead><tbody>';
+                    whData.forEach(function(r) {
+                        html += '<tr><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.name)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.id)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+r.date+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+r.checkIn+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+r.checkOut+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);font-weight:600;">'+r.hours+'</td></tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+            }
+
+            if (type === 'employee-details' || type === 'all') {
+                var empData = data.employeeDetails || [];
+                if (empData.length) hasAnyData = true;
+                html += '<h4 style="font-size:0.9rem;margin:20px 0 8px;color:var(--primary-light);"><i class="bi bi-person-badge"></i> Staff Details</h4>';
+                if (!empData.length) {
+                    html += '<div style="text-align:center;padding:24px;color:var(--text-muted);background:var(--bg-input);border-radius:8px;margin-bottom:12px;"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No staff records found. Add Staffs first to see data here.</div>';
+                } else {
+                    html += '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><thead><tr>';
+                    ['Name','ID','Phone','Job Title','Type','Qualification','Joined','Status'].forEach(function(h) { html += '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--primary-light);font-size:0.75rem;">'+h+'</th>'; });
+                    html += '</tr></thead><tbody>';
+                    empData.forEach(function(r) {
+                        html += '<tr><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.name)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.id)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.phone)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.job)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.type)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.qual)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+r.doj+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);"><span style="padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;background:'+(r.status==='active'?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)');color:'+(r.status==='active'?'#10b981':'#ef4444')+';">'+r.status+'</span></td></tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+            }
+
+            if (type === 'attendance-sheet' || type === 'all') {
+                var attData = data.attendanceSheet || [];
+                if (attData.length) hasAnyData = true;
+                html += '<h4 style="font-size:0.9rem;margin:20px 0 8px;color:var(--primary-light);"><i class="bi bi-clipboard-check"></i> Attendance Sheet</h4>';
+                if (!attData.length) {
+                    html += '<div style="text-align:center;padding:24px;color:var(--text-muted);background:var(--bg-input);border-radius:8px;margin-bottom:12px;"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No attendance records found for this period. Mark attendance first to see data here.</div>';
+                } else {
+                    html += '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><thead><tr>';
+                    ['Employee','ID','Date','Status','Time','Location'].forEach(function(h) { html += '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--primary-light);font-size:0.75rem;">'+h+'</th>'; });
+                    html += '</tr></thead><tbody>';
+                    attData.forEach(function(r) {
+                        var badge = r.status==='In Time' ? 'background:rgba(16,185,129,0.15);color:#10b981;' : 'background:rgba(239,68,68,0.15);color:#ef4444;';
+                        html += '<tr><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.name)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+esc(r.id)+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+r.date+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);"><span style="padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;'+badge+'">'+r.status+'</span></td><td style="padding:6px 8px;border-bottom:1px solid var(--border);">'+r.time+'</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:0.7rem;">'+esc(r.location)+'</td></tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+            }
+
+            if (type === 'all' && !hasAnyData) {
+                html = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="bi bi-folder2-open" style="font-size:3rem;display:block;margin-bottom:12px;"></i><h4 style="margin:0 0 8px;color:var(--text);">No Records Found</h4><p style="margin:0;font-size:0.85rem;">No data available for the selected period. Please Add Staffs and mark attendance first.</p></div>';
+            }
+
+            document.getElementById('reportContent').innerHTML = html;
+            document.getElementById('reportModal').classList.add('active');
+        }
+
+        function downloadReport(type, format) {
+            var data = getReportData(type);
+            var titles = { 'working-hours': 'Daily Working Hours', 'employee-details': 'Staff Details', 'attendance-sheet': 'Attendance Sheet', 'all': 'All Reports' };
+            var title = titles[type] || 'Report';
+
+            var hasAnyData = false;
+            if (data.workingHours.length) hasAnyData = true;
+            if (data.employeeDetails.length) hasAnyData = true;
+            if (data.attendanceSheet.length) hasAnyData = true;
+            if (!hasAnyData) {
+                alert('No records found for the selected period. Please Add Staffs and mark attendance first.');
+                return;
+            }
+
+            if (format === 'pdf') {
+                var jsPDF = window.jspdf.jsPDF;
+                var doc = new jsPDF('l', 'mm', 'a4');
+                doc.setFontSize(16);
+                doc.text('Indian A/C Sales & Services - ' + title, 14, 15);
+                doc.setFontSize(9);
+                doc.text('Period: ' + (data.range.from || 'All') + ' to ' + (data.range.to || 'All'), 14, 22);
+
+                var y = 28;
+                if ((type === 'working-hours' || type === 'all') && data.workingHours.length) {
+                    doc.setFontSize(11);
+                    doc.text('Daily Working Hours', 14, y); y += 4;
+                    doc.autoTable({ startY: y, head: [['Employee','ID','Date','Check-In','Check-Out','Hours']], body: data.workingHours.map(function(r){return [r.name,r.id,r.date,r.checkIn,r.checkOut,r.hours]}), theme:'grid', headStyles:{fillColor:[99,102,241]}, styles:{fontSize:7,cellPadding:2} });
+                    y = doc.lastAutoTable.finalY + 8;
+                }
+                if ((type === 'employee-details' || type === 'all') && data.employeeDetails.length) {
+                    if (y > 180) { doc.addPage(); y = 15; }
+                    doc.setFontSize(11);
+                    doc.text('Staff Details', 14, y); y += 4;
+                    doc.autoTable({ startY: y, head: [['Name','ID','Phone','Job Title','Type','Qualification','Joined','Status']], body: data.employeeDetails.map(function(r){return [r.name,r.id,r.phone,r.job,r.type,r.qual,r.doj,r.status]}), theme:'grid', headStyles:{fillColor:[99,102,241]}, styles:{fontSize:7,cellPadding:2} });
+                    y = doc.lastAutoTable.finalY + 8;
+                }
+                if ((type === 'attendance-sheet' || type === 'all') && data.attendanceSheet.length) {
+                    if (y > 180) { doc.addPage(); y = 15; }
+                    doc.setFontSize(11);
+                    doc.text('Attendance Sheet', 14, y); y += 4;
+                    doc.autoTable({ startY: y, head: [['Employee','ID','Date','Status','Time','Location']], body: data.attendanceSheet.map(function(r){return [r.name,r.id,r.date,r.status,r.time,r.location]}), theme:'grid', headStyles:{fillColor:[99,102,241]}, styles:{fontSize:7,cellPadding:2} });
+                }
+                doc.save(title.replace(/\s+/g, '_') + '.pdf');
+            }
+        }
+
+        (function() {
+            var today = new Date().toISOString().split('T')[0];
+            document.getElementById('dlFrom').value = today;
+            document.getElementById('dlTo').value = today;
+        })();
+    </script>
+    <script src="/mic-btn.js"></script>
+    <div style="text-align:center;padding:16px 0;color:rgba(255,255,255,0.35);font-size:0.75rem;">Tech support: Tony 6385691188</div>
+</body>
+</html>

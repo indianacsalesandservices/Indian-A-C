@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Server logs
+server_err.log
+server_out.log
+
+# Database
+instance/
+
+# Sensitive files
+.server_key
+.attendance_log.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Billing system temp files
+Billing system/logo.png
+Billing system/watermark.png
+
+# Test files
+test_pages.py
+test_*.py
+
+# Node
+node_modules/
+package-lock.json

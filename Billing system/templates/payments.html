@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Payments - {{ company.company_name }}{% endblock %}
+{% block page_title %}<strong>Payment Tracking</strong>{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <form class="d-flex" method="GET">
+        <input type="text" class="form-control me-2" name="search" placeholder="Search by invoice number..." value="{{ search }}">
+        <button class="btn btn-outline-primary me-2"><i class="bi bi-search"></i></button>
+        {% if search %}<a href="{{ url_for('payments') }}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Due</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    {% set paid = namespace(amount=0) %}
+                    {% for p in inv.payments %}{% set paid.amount = paid.amount + p.amount %}{% endfor %}
+                    <tr id="row-{{ inv.id }}">
+                        <td><a href="{{ url_for('view_invoice', id=inv.id) }}" class="text-decoration-none">{{ inv.invoice_number }}</a></td>
+                        <td>{{ inv.customer.name }}</td>
+                        <td class="text-end">&#8377;{{ "{:,.2f}".format(inv.grand_total) }}</td>
+                        <td class="text-end text-success paid-amount">&#8377;{{ "{:,.2f}".format(paid.amount) }}</td>
+                        <td class="text-end text-danger due-amount">
+                            {% if inv.grand_total - paid.amount > 0 %}
+                            <span>&#8377;{{ "{:,.2f}".format(inv.grand_total - paid.amount) }}</span>
+                            <a href="{{ url_for('print_invoice', id=inv.id) }}" class="print-link btn btn-sm btn-outline-warning ms-1" target="_blank" title="Print Invoice"><i class="bi bi-printer"></i></a>
+                            {% else %}&#8377;0.00{% endif %}
+                        </td>
+                        <td>
+                            <span class="badge status-badge {% if inv.status == 'paid' %}bg-success{% elif inv.status == 'partial' %}bg-warning{% else %}bg-danger{% endif %}">{{ inv.status|capitalize }}</span>
+                        </td>
+                        <td>
+                            {% if inv.status != 'paid' %}
+                            <button class="pay-btn btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#payModal{{ inv.id }}">
+                                <i class="bi bi-credit-card"></i> Pay
+                            </button>
+                            <a href="{{ url_for('print_invoice', id=inv.id) }}" class="btn btn-sm btn-outline-warning" target="_blank"><i class="bi bi-printer"></i> Print</a>
+                            {% endif %}
+                            {% if current_user.role == 'admin' %}
+                            <form method="POST" action="{{ url_for('delete_invoice', id=inv.id) }}" class="d-inline" onsubmit="return confirm('Delete this invoice?')">
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% if inv.payments %}
+                    <tr class="bg-body-secondary">
+                        <td colspan="7" class="py-2">
+                            <small class="text-muted">
+                                <i class="bi bi-clock-history"></i> Payments:
+                                {% for p in inv.payments %}
+                                <span class="badge bg-secondary me-1">
+                                    {{ p.payment_method|title }} - &#8377;{{ "{:,.2f}".format(p.amount) }}
+                                    {% if p.reference %}({{ p.reference }}){% endif %}
+                                    {{ p.payment_date.strftime('%d %b %Y') }}
+                                    {% if current_user.role == 'admin' %}
+                                    <form method="POST" action="{{ url_for('delete_payment', id=p.id) }}" class="d-inline" onsubmit="return confirm('Delete this payment?')">
+                                        <button class="btn btn-sm btn-outline-danger border-0 py-0 px-1 ms-1"><i class="bi bi-x"></i></button>
+                                    </form>
+                                    {% endif %}
+                                </span>
+                                {% endfor %}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% if inv.status != 'paid' %}
+                    <div class="modal fade" id="payModal{{ inv.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form class="pay-form" method="POST" action="{{ url_for('add_payment') }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Record Payment - {{ inv.invoice_number }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <input type="hidden" name="invoice_id" value="{{ inv.id }}">
+                                        <div class="mb-3">
+                                            <label class="form-label">Amount Due: <strong class="due-label">&#8377;{{ "{:,.2f}".format(inv.grand_total - paid.amount) }}</strong></label>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Payment Amount (&#8377;)</label>
+                                            <input type="number" class="form-control" name="amount" step="0.01" min="0.01" max="{{ inv.grand_total - paid.amount }}" value="{{ inv.grand_total - paid.amount }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Payment Method</label>
+                                            <select class="form-select" name="payment_method">
+                                                <option value="cash">Cash</option>
+                                                <option value="upi">UPI</option>
+                                                <option value="bank_transfer">Bank Transfer</option>
+                                                <option value="card">Card</option>
+                                                <option value="cheque">Cheque</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Reference Number</label>
+                                            <input type="text" class="form-control" name="reference" placeholder="Optional reference">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-success">Record Payment</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% if not invoices %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No invoices found</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.pay-form').forEach(function(form) {
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    try {
+      var resp = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: new FormData(form)
+      });
+      var data = await resp.json();
+      if (!data.success) { throw new Error('fail'); }
+
+      var invId = form.querySelector('[name="invoice_id"]').value;
+      var row = document.getElementById('row-' + invId);
+      if (!row) { location.reload(); return; }
+
+      row.querySelector('.paid-amount').innerHTML = '&#8377;' + data.paid.toFixed(2);
+      var dueEl = row.querySelector('.due-amount');
+      if (data.due > 0) {
+        dueEl.innerHTML = '<span>&#8377;' + data.due.toFixed(2) + '</span>' + dueEl.querySelector('.print-link').outerHTML;
+      } else {
+        dueEl.textContent = '&#8377;0.00';
+      }
+      var badge = row.querySelector('.status-badge');
+      badge.className = 'badge status-badge ' + (data.status === 'paid' ? 'bg-success' : 'bg-warning');
+      badge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+
+      var modalEl = document.getElementById('payModal' + invId);
+      var modal = bootstrap.Modal.getInstance(modalEl);
+
+      if (data.due <= 0) {
+        if (modal) modal.hide();
+        if (row.querySelector('.pay-btn')) row.querySelector('.pay-btn').style.display = 'none';
+      } else {
+        modalEl.querySelector('.due-label').innerHTML = '&#8377;' + data.due.toFixed(2);
+        modalEl.querySelector('[name="amount"]').value = data.due.toFixed(2);
+        modalEl.querySelector('[name="amount"]').max = data.due;
+        btn.disabled = false;
+        btn.innerHTML = 'Record Payment';
+      }
+    } catch(e) {
+      location.reload();
+    }
+  });
+});
+</script>
+{% endblock %}

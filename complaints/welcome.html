@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indian A/C Sales and Services</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="stylesheet" href="styles.css?v=3" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body data-page="welcome">
+  <header>
+    <div class="brand">
+      <img src="logo.png" alt="Indian A/C Logo" class="brand-logo" />
+      <div class="brand-text">
+        <h1 data-i18n="app.title">Indian A/C Sales and Services</h1>
+      </div>
+      <div class="brand-info">
+        <span id="live-date"></span>
+        <span id="live-time"></span>
+        <button id="langSwitcher" class="lang-toggle" type="button" aria-label="Switch language" title="Switch language"><span class="lang-icon">&#127760;</span><span class="lang-text">EN</span></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="top-nav">
+    <a class="nav-btn" href="welcome.html" data-i18n="nav.home">Home</a>
+    <a class="nav-btn" href="complaint.html" data-i18n="nav.new">New Entry</a>
+    <a class="nav-btn" href="pending.html" data-i18n="nav.pending">Pending Works</a>
+    <a class="nav-btn" href="completed.html" data-i18n="nav.completed">Completed Works</a>
+  </nav>
+
+  <main>
+    <section class="welcome-section">
+      <div class="stats-grid">
+        <div class="stat-card pending">
+          <div class="stat-value" id="statPending">0</div>
+          <div class="stat-label" data-i18n="welcome.statPending">Pending</div>
+        </div>
+        <div class="stat-card completed">
+          <div class="stat-value" id="statCompleted">0</div>
+          <div class="stat-label" data-i18n="welcome.statCompleted">Completed</div>
+        </div>
+        <div class="stat-card overdue">
+          <div class="stat-value" id="statOverdue">0</div>
+          <div class="stat-label" data-i18n="welcome.statOverdue">Overdue</div>
+        </div>
+        <div class="stat-card total">
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label" data-i18n="welcome.statTotal">Total</div>
+        </div>
+      </div>
+
+      <div class="nav-grid">
+        <a href="complaint.html" class="nav-card">
+          <div class="nav-icon">&#128221;</div>
+          <div class="nav-label" data-i18n="welcome.new.label">New Customer Complaint Entry</div>
+          <div class="nav-desc" data-i18n="welcome.new.desc">Add a new A/C complaint</div>
+        </a>
+        <a href="pending.html" class="nav-card">
+          <div class="nav-icon">&#9203;</div>
+          <div class="nav-label" data-i18n="welcome.pending.label">Pending Works</div>
+          <div class="nav-desc" data-i18n="welcome.pending.desc">View work in progress</div>
+          <span class="nav-badge" id="badgePending" style="display:none"></span>
+        </a>
+        <a href="completed.html" class="nav-card">
+          <div class="nav-icon">&#9989;</div>
+          <div class="nav-label" data-i18n="welcome.completed.label">Completed Works</div>
+          <div class="nav-desc" data-i18n="welcome.completed.desc">View finished work & PDFs</div>
+          <span class="nav-badge" id="badgeCompleted" style="display:none"></span>
+        </a>
+      </div>
+
+      <div class="welcome-actions">
+        <button id="downloadFullReport" class="btn btn-outline" data-i18n="common.downloadFullReport">Download Full Report</button>
+        <button id="shareFullReportWa" class="btn btn-share-wa" data-i18n="common.shareFullReportWa">Share via WhatsApp</button>
+      </div>
+
+      <div class="search-section">
+        <div class="search-box">
+          <input type="tel" id="searchPhone" data-i18n-placeholder="welcome.searchPh" placeholder="Search by phone number..." />
+          <button id="searchBtn" class="btn btn-primary" data-i18n="welcome.searchBtn">Search</button>
+        </div>
+        <div id="searchResults"></div>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;">
+        <a href="/index.html" class="btn btn-ghost" data-i18n="common.backHome">Back to Portal</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p data-i18n="app.copyright">&copy; 2026 Indian A/C Sales and Services</p>
+    <p class="tech-support" data-i18n="app.support">Tech support: Tony 6385691188</p>
+  </footer>
+
+  <script src="app.js?v=3"></script>
+</body>
+</html>

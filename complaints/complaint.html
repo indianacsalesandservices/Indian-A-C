@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indian A/C Sales and Services</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="stylesheet" href="styles.css?v=3" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body data-page="complaint">
+  <header>
+    <div class="brand">
+      <img src="logo.png" alt="Indian A/C Logo" class="brand-logo" />
+      <div class="brand-text">
+        <h1 data-i18n="app.title">Indian A/C Sales and Services</h1>
+      </div>
+      <div class="brand-info">
+        <span id="live-date"></span>
+        <span id="live-time"></span>
+        <button id="langSwitcher" class="lang-toggle" type="button" aria-label="Switch language" title="Switch language"><span class="lang-icon">&#127760;</span><span class="lang-text">EN</span></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="top-nav">
+    <a class="nav-btn" href="welcome.html" data-i18n="nav.home">Home</a>
+    <a class="nav-btn" href="complaint.html" data-i18n="nav.new">New Entry</a>
+    <a class="nav-btn" href="pending.html" data-i18n="nav.pending">Pending Works</a>
+    <a class="nav-btn" href="completed.html" data-i18n="nav.completed">Completed Works</a>
+  </nav>
+
+  <main>
+    <section class="form-section">
+      <div class="section-header">
+        <h2 data-i18n="complaint.title">Customer Complaint Entry</h2>
+      </div>
+      <form id="complaintForm">
+        <div class="form-group">
+          <label for="customerName"><span data-i18n="complaint.customerName">Customer Name</span> <span class="required" data-i18n="common.required">*</span></label>
+          <input type="text" id="customerName" name="customerName" required />
+        </div>
+
+        <div class="form-group">
+          <label for="customerPhone"><span data-i18n="complaint.customerPhone">Customer Phone No.</span> <span class="required" data-i18n="common.required">*</span></label>
+          <input type="tel" id="customerPhone" name="customerPhone" pattern="[0-9]{10}" data-i18n-placeholder="complaint.phPhone" placeholder="10-digit mobile number" required />
+        </div>
+
+        <div class="form-group">
+          <label for="address"><span data-i18n="complaint.address">Address</span> <span class="required" data-i18n="common.required">*</span></label>
+          <textarea id="address" name="address" rows="2" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="city"><span data-i18n="complaint.city">City</span> <span class="required" data-i18n="common.required">*</span></label>
+          <select id="city" name="city" required>
+            <option value="" data-i18n="complaint.selectCity">-- Select City --</option>
+            <option value="Kovilpatti" data-i18n="complaint.cityKovilpatti">Kovilpatti</option>
+            <option value="Pasuvanthanai" data-i18n="complaint.cityPasuvanthanai">Pasuvanthanai</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="location" data-i18n="complaint.location">Location / Area</label>
+          <input type="text" id="location" name="location" data-i18n-placeholder="complaint.phLocation" placeholder="Area / Landmark" />
+        </div>
+
+        <div class="form-group">
+          <label for="complaint"><span data-i18n="complaint.complaint">Complaint</span> <span class="required" data-i18n="common.required">*</span></label>
+          <textarea id="complaint" name="complaint" rows="4" data-i18n-placeholder="complaint.phComplaint" placeholder="Describe the A/C issue in detail..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="date"><span data-i18n="complaint.date">Date</span> <span class="required" data-i18n="common.required">*</span></label>
+          <input type="date" id="date" name="date" required />
+        </div>
+
+        <div class="form-group">
+          <label for="status" data-i18n="complaint.status">Complaint Status</label>
+          <select id="status" name="status">
+            <option value="Pending" data-i18n="complaint.status.pendingOpt">Pending Work (work in progress)</option>
+            <option value="Complete" data-i18n="complaint.status.completeOpt">Completed Work (work finished)</option>
+          </select>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary" data-i18n="common.save">Save Entry</button>
+          <button type="reset" class="btn btn-secondary" data-i18n="common.clear">Clear</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p data-i18n="app.copyright">&copy; 2026 Indian A/C Sales and Services</p>
+    <p class="tech-support" data-i18n="app.support">Tech support: Tony 6385691188</p>
+  </footer>
+
+  <script src="app.js?v=3"></script>
+</body>
+</html>

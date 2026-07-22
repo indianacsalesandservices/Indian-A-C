@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Attendance - Indian A/C</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ADMIN LOGIN -->
+<div class="public-page" id="loginPage">
+    <div class="public-card">
+        <img src="/logo.png" alt="Logo" style="width:60px;height:60px;border-radius:12px;margin-bottom:8px;" onerror="this.style.display='none'">
+        <h1>Admin Login</h1>
+        <p class="public-sub">Sign in to access attendance management</p>
+
+        <form id="adminLoginForm" onsubmit="App.adminLogin(event)">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="adminUser" placeholder="admin" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="adminPass" placeholder="admin123" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;">Sign In</button>
+        </form>
+
+        <div class="public-footer">
+            <button type="button" class="admin-access-btn" onclick="window.location.href='/attendance/'">&#8592; Staff Attendance</button>
+            <button type="button" class="admin-access-btn" onclick="window.location.href='/'">Back to Portal</button>
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:8px;" onerror="this.style.display='none'">
+            <h2>AttendPro Admin</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <div class="nav-item active" data-page="dashboard" onclick="App.navigate('dashboard')">
+                    <span class="nav-icon">&#128202;</span> Dashboard
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Management</div>
+                <div class="nav-item" data-page="staff-details" onclick="window.location.href='/details.html'">
+                    <span class="nav-icon">&#128101;</span> Staff Details
+                </div>
+                <div class="nav-item" data-page="manage-attendance" onclick="App.navigate('manage-attendance')">
+                    <span class="nav-icon">&#128221;</span> All Attendance
+                </div>
+                <div class="nav-item" data-page="manage-leave" onclick="App.navigate('manage-leave')">
+                    <span class="nav-icon">&#128203;</span> Leave Requests
+                </div>
+                <div class="nav-item" data-page="reports" onclick="App.navigate('reports')">
+                    <span class="nav-icon">&#128200;</span> Reports
+                </div>
+                <div class="nav-item" data-page="timings" onclick="App.navigate('timings')">
+                    <span class="nav-icon">&#9200;</span> Work Timings
+                </div>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar-sm" id="sidebarAvatar">AD</div>
+                <div class="user-details">
+                    <div class="user-name" id="sidebarName">Admin</div>
+                    <div class="user-role" id="sidebarRole">Administrator</div>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="App.logoutAdmin()" style="margin-top:12px;width:100%;">
+                Sign Out
+            </button>
+            <button class="logout-btn" onclick="window.location.href='/attendance/'" style="margin-top:4px;width:100%;">
+                &#8592; Staff Attendance
+            </button>
+            <button class="logout-btn" onclick="window.location.href='/'" style="margin-top:4px;width:100%;">
+                &#8592; Back to Portal
+            </button>
+            <button class="logout-btn" onclick="App.resetAllData()" style="margin-top:4px;width:100%;color:var(--danger);">
+                Reset All Data
+            </button>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="topbar-right">
+                <span id="currentDate" style="color:var(--gray-500);font-size:14px;"></span>
+            </div>
+        </div>
+        <div class="content">
+
+            <!-- DASHBOARD -->
+            <div class="page" id="page-dashboard">
+                <div class="stats-grid" id="dashboardStats"></div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header"><h3>Today's Overview</h3></div>
+                        <div class="card-body" id="todayOverview"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3>Recent Activity</h3></div>
+                        <div class="card-body" id="recentActivity"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MANAGE ATTENDANCE -->
+            <div class="page" id="page-manage-attendance">
+                <div class="card">
+                    <div class="card-header"><h3>All Staff Attendance</h3></div>
+                    <div class="card-body">
+                        <div class="filter-bar">
+                            <div class="search-group">
+                                <div class="search-box">
+                                    <span class="search-icon">&#128269;</span>
+                                    <input type="text" id="adminAttSearch" placeholder="Search by name..." oninput="App.renderAllAttendance()" style="padding-left:36px;">
+                                </div>
+                                <span class="mic-btn" data-target="adminAttSearch" title="Search by voice" onclick="App.startVoiceSearch(this)">&#127908;</span>
+                            </div>
+                            <input type="date" id="adminAttDate" onchange="App.renderAllAttendance()">
+                            <select id="adminAttDept" onchange="App.renderAllAttendance()">
+                                <option value="">All Departments</option>
+                                <option value="IT">IT</option>
+                                <option value="HR">HR</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Marketing">Marketing</option>
+                            </select>
+                            <select id="adminAttStatus" onchange="App.renderAllAttendance()">
+                                <option value="">All Status</option>
+                                <option value="present">Present</option>
+                                <option value="absent">Absent</option>
+                                <option value="late">Late</option>
+                            </select>
+                        </div>
+                        <div class="table-wrapper" id="allAttendanceTable"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MANAGE LEAVE -->
+            <div class="page" id="page-manage-leave">
+                <div class="card">
+                    <div class="card-header"><h3>Leave Requests</h3></div>
+                    <div class="card-body">
+                        <div class="filter-bar">
+                            <div class="search-group">
+                                <div class="search-box">
+                                    <span class="search-icon">&#128269;</span>
+                                    <input type="text" id="leaveSearch" placeholder="Search by name..." oninput="App.renderAllLeaves()" style="padding-left:36px;">
+                                </div>
+                                <span class="mic-btn" data-target="leaveSearch" title="Search by voice" onclick="App.startVoiceSearch(this)">&#127908;</span>
+                            </div>
+                            <select id="leaveFilterStatus" onchange="App.renderAllLeaves()">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div id="allLeavesList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORTS -->
+            <div class="page" id="page-reports">
+                <div class="stats-grid" id="reportStats"></div>
+                <div class="grid-2" style="margin-bottom:24px;">
+                    <div class="card">
+                        <div class="card-header"><h3>Attendance by Department</h3></div>
+                        <div class="card-body" id="deptChart"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3>Monthly Summary</h3></div>
+                        <div class="card-body">
+                            <div class="filter-bar" style="margin-bottom:16px;">
+                                <select id="reportStaff" onchange="App.renderMonthlyReport()">
+                                    <option value="">Select Staff</option>
+                                </select>
+                                <input type="month" id="reportMonth" onchange="App.renderMonthlyReport()">
+                            </div>
+                            <div id="monthlyReport"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Staff Attendance Summary</h3></div>
+                    <div class="card-body">
+                        <div class="filter-bar" style="margin-bottom:16px;">
+                            <div class="search-group">
+                                <div class="search-box">
+                                    <span class="search-icon">&#128269;</span>
+                                    <input type="text" id="reportSearch" placeholder="Search by name..." oninput="App.renderReports()" style="padding-left:36px;">
+                                </div>
+                                <span class="mic-btn" data-target="reportSearch" title="Search by voice" onclick="App.startVoiceSearch(this)">&#127908;</span>
+                            </div>
+                        </div>
+                        <div class="table-wrapper" id="reportTable"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORK TIMINGS -->
+            <div class="page" id="page-timings">
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><h3>Staff Work Timings</h3></div>
+                    <div class="card-body">
+                        <p style="color:var(--gray-500);margin-bottom:20px;">Set individual work timings for each staff member. Admin only.</p>
+                        <div class="form-group" style="max-width:400px;">
+                            <label style="font-weight:600;">Select Staff Member</label>
+                            <select id="timingStaffSelect" onchange="App.selectStaffTimings()" class="form-control">
+                                <option value="">-- Choose Staff --</option>
+                            </select>
+                        </div>
+                        <div id="timingFormWrap" style="display:none;margin-top:20px;">
+                            <div id="timingStaffLabel" style="font-size:16px;font-weight:600;margin-bottom:16px;padding:10px 14px;background:var(--gray-50);border-radius:8px;"></div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;">
+                                <div class="form-group">
+                                    <label style="font-weight:600;">Start Time</label>
+                                    <input type="time" id="timingStartTime" class="form-control">
+                                    <small style="color:var(--gray-500);">After this + grace = Late</small>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600;">End Time</label>
+                                    <input type="time" id="timingEndTime" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600;">Grace Period (min)</label>
+                                    <input type="number" id="timingGrace" min="0" max="60" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-weight:600;">Half-Day Threshold (hrs)</label>
+                                    <input type="number" id="timingHalfDay" min="1" max="8" step="0.5" class="form-control">
+                                </div>
+                            </div>
+                            <div style="margin-top:20px;display:flex;gap:12px;">
+                                <button class="btn btn-primary" onclick="App.saveStaffTimings()">Save for this Staff</button>
+                                <button class="btn btn-secondary" onclick="App.selectStaffTimings()">Reset</button>
+                            </div>
+                            <div id="timingsStatus" style="margin-top:12px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>All Staff Timings Summary</h3></div>
+                    <div class="card-body">
+                        <div class="table-wrapper" id="allTimingsTable"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="/auth.js"></script>
+<script src="data.js?v=2"></script>
+<script src="app-admin.js?v=2"></script>
+<div style="text-align:center;padding:16px 0;color:rgba(255,255,255,0.35);font-size:0.75rem;">Tech support: Tony 6385691188</div>
+</body>
+</html>

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Reports - {{ company.company_name }}{% endblock %}
+{% block page_title %}<strong>Sales & Inventory Report</strong>{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i> Back</a>
+        <a href="{{ url_for('view_report') }}" class="btn btn-outline-primary me-2"><i class="bi bi-eye"></i> View</a>
+        <a href="{{ url_for('download_report') }}" class="btn btn-outline-success"><i class="bi bi-download"></i> Download PDF</a>
+    </div>
+    <span class="text-muted">Generated: {{ today }}</span>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="bi bi-funnel"></i> Filter by Date</h6></div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('view_report') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">From Date</label>
+                <div class="input-group">
+                    <input type="date" class="form-control" name="start_date" value="{{ filter_start }}">
+                    <button class="btn btn-outline-secondary" type="button" onclick="this.previousElementSibling.showPicker()"><i class="bi bi-calendar"></i></button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To Date</label>
+                <div class="input-group">
+                    <input type="date" class="form-control" name="end_date" value="{{ filter_end }}">
+                    <button class="btn btn-outline-secondary" type="button" onclick="this.previousElementSibling.showPicker()"><i class="bi bi-calendar"></i></button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i> Filter</button>
+                <a href="{{ url_for('view_report') }}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Today's Sales</h6></div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-primary">{{ today_invoices }}</h4>
+                        <small class="text-muted">Invoices Today</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-success">&#8377;{{ "{:,.0f}".format(today_sales) }}</h4>
+                        <small class="text-muted">Today's Sales</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-warning">&#8377;{{ "{:,.0f}".format(today_tax) }}</h4>
+                        <small class="text-muted">Tax Today</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-info">&#8377;{{ "{:,.0f}".format(today_paid) }}</h4>
+                        <small class="text-muted">Paid Today</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Overview (Current Financial Year)</h6></div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-primary">{{ total_invoices }}</h4>
+                        <small class="text-muted">Total Invoices</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-success">&#8377;{{ "{:,.0f}".format(monthly_sales) }}</h4>
+                        <small class="text-muted">Monthly Sales</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-info">&#8377;{{ "{:,.0f}".format(yearly_sales) }}</h4>
+                        <small class="text-muted">Yearly Sales</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-body-secondary h-100">
+                    <div class="card-body">
+                        <h4 class="text-warning">&#8377;{{ "{:,.0f}".format(total_tax) }}</h4>
+                        <small class="text-muted">Tax Collected</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Daily Sales Report</h6></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th class="text-end">Invoices</th>
+                        <th class="text-end">Sales</th>
+                        <th class="text-end">Tax</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Unpaid</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in daily_data %}
+                    <tr>
+                        <td>{{ day.date }}</td>
+                        <td class="text-end">{{ day.invoices }}</td>
+                        <td class="text-end fw-bold">&#8377;{{ "{:,.2f}".format(day.sales) }}</td>
+                        <td class="text-end">&#8377;{{ "{:,.2f}".format(day.tax) }}</td>
+                        <td class="text-end text-success">&#8377;{{ "{:,.2f}".format(day.paid) }}</td>
+                        <td class="text-end text-danger">&#8377;{{ "{:,.2f}".format(day.unpaid) }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not daily_data %}
+                    <tr><td colspan="6" class="text-center text-muted py-3">No daily data</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0">Top Selling Products</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>#</th><th>Product</th><th class="text-end">Qty Sold</th><th class="text-end">Revenue</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for tp in top_products %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ tp.name }}</td>
+                            <td class="text-end">{{ tp.total_qty }}</td>
+                            <td class="text-end">&#8377;{{ "{:,.2f}".format(tp.total_revenue) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not top_products %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0">Product Inventory & Sales</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Product</th><th class="text-end">Stock</th><th class="text-end">Sold</th><th class="text-end">Revenue</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for pd in product_data %}
+                        <tr>
+                            <td>{{ pd.name }}</td>
+                            <td class="text-end">{{ pd.stock }}</td>
+                            <td class="text-end">{{ pd.sold }}</td>
+                            <td class="text-end">&#8377;{{ "{:,.2f}".format(pd.revenue) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not product_data %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">No products</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Customer Summary</h6></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr><th>Customer</th><th>Phone</th><th class="text-end">Invoices</th><th class="text-end">Total Spent</th></tr>
+                </thead>
+                <tbody>
+                    {% for cu in customer_data %}
+                    <tr>
+                        <td>{{ cu.name }}</td>
+                        <td>{{ cu.phone or '-' }}</td>
+                        <td class="text-end">{{ cu.invoices }}</td>
+                        <td class="text-end">&#8377;{{ "{:,.2f}".format(cu.total) }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not customer_data %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">No customers</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

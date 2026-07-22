@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Attendance - Indian A/C</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="public-page" id="publicPage">
+    <div class="public-card">
+        <img src="/logo.png" alt="Logo" style="width:60px;height:60px;border-radius:12px;margin-bottom:8px;" onerror="this.style.display='none'">
+        <h1>Staff Attendance</h1>
+        <p class="public-sub">Enter your name and check in/out</p>
+
+        <div class="public-clock" id="publicClock"></div>
+
+        <div id="attStaffSection">
+            <div class="form-group">
+                <label>Enter Your Name</label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div class="search-box" style="flex:1;">
+                        <span class="search-icon">&#128269;</span>
+                        <input type="text" id="attNameInput" placeholder="Type your full name..." autocomplete="off" style="padding-left:36px;">
+                    </div>
+                    <span class="mic-btn" data-target="attNameInput" title="Search by voice" onclick="App.startVoiceSearch(this)">&#127908;</span>
+                </div>
+                <div class="att-name-match" id="attNameMatch"></div>
+            </div>
+            <div class="att-buttons">
+                <div class="att-status-display" id="attStatusDisplay"></div>
+                <div class="att-actions">
+                    <button type="button" class="btn btn-att-in btn-lg" id="btnClockIn" onclick="App.recordAttendance()">
+                        Check In
+                    </button>
+                    <button type="button" class="btn btn-att-out btn-lg" id="btnClockOut" onclick="App.clockOutPublic()">
+                        Check Out
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg" id="btnLeaveRequest" onclick="App.showLeaveForm()" style="display:none;">
+                        Request Leave
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="public-history" id="publicHistory"></div>
+
+        <div class="public-footer">
+            <button type="button" class="admin-access-btn" onclick="window.location.href='/'">&#8592; Back to Portal</button>
+            <button type="button" class="admin-access-btn" onclick="window.location.href='/attendance/leave'">Leave Request</button>
+            <button type="button" class="admin-access-btn" onclick="window.location.href='/attendance/admin'">Admin Panel</button>
+        </div>
+    </div>
+</div>
+
+<!-- LEAVE REQUEST MODAL -->
+<div class="modal-overlay" id="leaveModal">
+    <div class="modal" style="max-width:440px;width:90%;">
+        <div class="modal-header">
+            <h3>Request Leave</h3>
+            <button class="modal-close" onclick="App.closeModal('leaveModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="leaveModalStaffLabel" style="font-size:14px;font-weight:600;margin-bottom:16px;padding:10px 14px;background:var(--gray-50);border-radius:8px;"></div>
+            <div class="form-group">
+                <label>Leave Type</label>
+                <select id="leaveType" class="form-control">
+                    <option value="Annual">Annual Leave</option>
+                    <option value="Sick">Sick Leave</option>
+                    <option value="Personal">Personal Leave</option>
+                    <option value="Emergency">Emergency Leave</option>
+                    <option value="Maternity">Maternity Leave</option>
+                </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="leaveStartDate" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" id="leaveEndDate" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Reason</label>
+                <textarea id="leaveReason" class="form-control" rows="3" placeholder="Reason for leave..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="App.closeModal('leaveModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="App.submitLeave()">Submit Request</button>
+        </div>
+    </div>
+</div>
+
+<script src="/auth.js"></script>
+<script src="data.js?v=3"></script>
+<script src="app.js?v=4"></script>
+<div style="text-align:center;padding:16px 0;color:rgba(255,255,255,0.35);font-size:0.75rem;">Tech support: Tony 6385691188</div>
+</body>
+</html>

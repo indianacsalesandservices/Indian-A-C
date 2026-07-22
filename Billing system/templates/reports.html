@@ -1,0 +1,166 @@
+﻿{% extends "base.html" %}
+{% block title %}Reports - {{ company.company_name }}{% endblock %}
+{% block page_title %}<strong>Sales Reports</strong>{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-month text-primary" style="font-size: 2rem;"></i>
+                <h6 class="text-muted mt-2">Monthly Sales</h6>
+                <h3>&#8377;{{ "{:,.2f}".format(monthly_sales) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-year text-success" style="font-size: 2rem;"></i>
+                <h6 class="text-muted mt-2">Yearly Sales</h6>
+                <h3>&#8377;{{ "{:,.2f}".format(yearly_sales) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <i class="bi bi-percent text-warning" style="font-size: 2rem;"></i>
+                <h6 class="text-muted mt-2">Total Tax Collected</h6>
+                <h3>&#8377;{{ "{:,.2f}".format(total_tax_collected) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Monthly Revenue Trend</h6></div>
+            <div class="card-body">
+                <canvas id="revenueTrendChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0">Payment Methods</h6></div>
+            <div class="card-body">
+                <canvas id="paymentMethodChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Top Selling Products</h6></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead><tr><th>#</th><th>Product</th><th class="text-end">Qty Sold</th></tr></thead>
+                    <tbody>
+                        {% for name, qty in top_products %}
+                        <tr><td>{{ loop.index }}</td><td>{{ name }}</td><td class="text-end">{{ qty }}</td></tr>
+                        {% endfor %}
+                        {% if not top_products %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">No data yet</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Sales History</h6>
+        <span class="badge bg-secondary">{{ sales_history|length }} records</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Staff ID</th>
+                        <th>Staff Name</th>
+                        <th class="text-end">Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sales_history %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><a href="{{ url_for('view_invoice', id=row.id) }}" class="text-decoration-none">{{ row.invoice_number }}</a></td>
+                        <td>{{ row.date_created.strftime('%d-%m-%Y %H:%M') }}</td>
+                        <td>{{ row.customer_name }}</td>
+                        <td><code>{{ row.emp_username }}</code></td>
+                        <td>{{ row.emp_name }}</td>
+                        <td class="text-end fw-semibold">&#8377;{{ "{:,.2f}".format(row.grand_total) }}</td>
+                        <td>
+                            {% if row.status == 'paid' %}
+                            <span class="badge bg-success">Paid</span>
+                            {% elif row.status == 'partial' %}
+                            <span class="badge bg-warning">Partial</span>
+                            {% else %}
+                            <span class="badge bg-danger">Unpaid</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not sales_history %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">No sales records yet</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const monthlyData = {{ monthly_data | tojson }};
+const paymentData = {{ payment_methods | tojson }};
+
+new Chart(document.getElementById('revenueTrendChart'), {
+    type: 'line',
+    data: {
+        labels: monthlyData.map(d => d.month),
+        datasets: [{
+            label: 'Revenue',
+            data: monthlyData.map(d => d.revenue),
+            borderColor: '#000080',
+            backgroundColor: 'rgba(0, 0, 128, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#000080'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { callback: v => '\u20b9' + v.toLocaleString() } } }
+    }
+});
+
+if (paymentData.length > 0) {
+    const pmColors = ['#000080', '#FF9933', '#138808', '#c8a000', '#000066'];
+    new Chart(document.getElementById('paymentMethodChart'), {
+        type: 'doughnut',
+        data: {
+            labels: paymentData.map(d => d[0] ? d[0].toUpperCase() : 'Unknown'),
+            datasets: [{ data: paymentData.map(d => d[1]), backgroundColor: pmColors.slice(0, paymentData.length) }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+</script>
+{% endblock %}

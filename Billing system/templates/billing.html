@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% block title %}Billing - {{ company.company_name }}{% endblock %}
+{% block page_title %}<strong>Billing & Invoice Creation</strong>{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Create New Invoice</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Customer Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="custName" placeholder="Enter customer name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Phone <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="custPhone" placeholder="Enter phone number" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="custEmail" placeholder="Optional">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">GSTIN</label>
+                        <input type="text" class="form-control" id="custGst" placeholder="Optional" maxlength="15">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">State</label>
+                        <input type="text" class="form-control" id="custState" placeholder="Customer state">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Due Date</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="dueDate">
+                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('dueDate').showPicker()"><i class="bi bi-calendar"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Discount (&#8377;)</label>
+                        <input type="number" class="form-control" id="discountInput" value="0" step="0.01" min="0">
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="igstCheck">
+                            <label class="form-check-label" for="igstCheck">IGST (Interstate)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="reverseCharge">
+                            <label class="form-check-label" for="reverseCharge">Reverse Charge</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row mb-3">
+                    <div class="col-md-7">
+                        <label class="form-label">Product</label>
+                        <select class="form-select" id="productSelect">
+                            <option value="">-- Select Product --</option>
+                            {% for p in products %}
+                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-gst="{{ p.gst_rate }}" data-stock="{{ p.stock }}" data-hsn="{{ p.hsn_code or '' }}" data-unit="{{ p.unit or 'NOS' }}">{{ p.name }} - &#8377;{{ "{:,.2f}".format(p.price) }} (GST: {{ p.gst_rate }}%, Stock: {{ p.stock }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="qtyInput" value="1" min="1">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" id="addItemBtn"><i class="bi bi-plus"></i> Add</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm" id="invoiceItems">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>HSN</th>
+                                <th>Unit</th>
+                                <th>Rate</th>
+                                <th>Qty</th>
+                                <th>Disc</th>
+                                <th>Taxable</th>
+                                <th>GST%</th>
+                                <th>GST Amt</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">Invoice Summary</h6>
+            </div>
+                <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span id="subtotalDisplay">&#8377;0.00</span>
+                </div>
+                <div id="gstBreakdown">
+                    <div class="d-flex justify-content-between mb-2" id="cgstRow" style="display:none !important">
+                        <span id="cgstLabel">CGST:</span>
+                        <span id="cgstDisplay">&#8377;0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2" id="sgstRow" style="display:none !important">
+                        <span id="sgstLabel">SGST:</span>
+                        <span id="sgstDisplay">&#8377;0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2" id="igstRow" style="display:none !important">
+                        <span id="igstLabel">IGST:</span>
+                        <span id="igstDisplay">&#8377;0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Total GST:</strong>
+                        <strong id="totalGstDisplay">&#8377;0.00</strong>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Discount:</span>
+                    <span id="discountDisplay">-&#8377;0.00</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-3">
+                    <strong>Grand Total:</strong>
+                    <strong class="text-primary fs-5" id="grandTotalDisplay">&#8377;0.00</strong>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success py-2" id="createInvoiceBtn">
+                        <i class="bi bi-check-circle"></i> Create Invoice
+                    </button>
+                    <button class="btn btn-outline-danger" id="resetBtn">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset All
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Recent Invoices</h6>
+                <div>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="invFilter" id="filterAll" value="all" checked>
+                        <label class="btn btn-outline-secondary" for="filterAll">All</label>
+                        <input type="radio" class="btn-check" name="invFilter" id="filterPaid" value="paid">
+                        <label class="btn btn-outline-success" for="filterPaid"><i class="bi bi-check-circle"></i> Fully Paid</label>
+                        <input type="radio" class="btn-check" name="invFilter" id="filterDue" value="due">
+                        <label class="btn btn-outline-danger" for="filterDue"><i class="bi bi-exclamation-circle"></i> Due</label>
+                    </div>
+                    <a href="{{ url_for('payments') }}" class="btn btn-sm btn-outline-primary ms-2">View All</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" id="recentInvoices">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Customer</th>
+                                <th class="text-end">Paid</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inv in invoices[:3] %}
+                            {% set paid = namespace(amount=0) %}
+                            {% for p in inv.payments %}{% set paid.amount = paid.amount + p.amount %}{% endfor %}
+                            <tr data-status="{{ inv.status }}">
+                                <td><a href="{{ url_for('view_invoice', id=inv.id) }}" class="text-decoration-none">{{ inv.invoice_number }}</a></td>
+                                <td>{{ inv.customer.name }}</td>
+                                <td class="text-end text-success fw-bold">&#8377;{{ "{:,.2f}".format(paid.amount) }}</td>
+                                <td class="text-center">
+                                    {% if inv.status == 'paid' %}
+                                    <span class="badge bg-success" title="Fully Paid"><i class="bi bi-check-circle-fill"></i></span>
+                                    {% elif inv.status == 'partial' %}
+                                    <span class="badge bg-warning text-dark" title="Partial"><i class="bi bi-hourglass-split"></i></span>
+                                    {% else %}
+                                    <span class="badge bg-danger" title="Due"><i class="bi bi-x-circle-fill"></i></span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ url_for('view_invoice', id=inv.id) }}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    {% if inv.grand_total - paid.amount > 0 %}
+                                    <a href="{{ url_for('print_invoice', id=inv.id) }}" class="btn btn-sm btn-outline-warning" target="_blank" title="Print"><i class="bi bi-printer"></i></a>
+                                    {% endif %}
+                                    {% if current_user.role == 'admin' %}
+                                    <form method="POST" action="{{ url_for('delete_invoice', id=inv.id) }}" class="d-inline" onsubmit="return confirm('Delete this invoice?')">
+                                        <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not invoices %}
+                            <tr><td colspan="5" class="text-center text-muted py-3">No invoices yet</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let invoiceItems = [];
+let itemCounter = 0;
+
+document.getElementById('addItemBtn').addEventListener('click', function() {
+    const productSelect = document.getElementById('productSelect');
+    const qtyInput = document.getElementById('qtyInput');
+    const option = productSelect.options[productSelect.selectedIndex];
+
+    if (!option.value) { alert('Select a product'); return; }
+
+    const productId = parseInt(option.value);
+    const productName = option.text.split(' - ')[0];
+    const price = parseFloat(option.dataset.price);
+    const gstRate = parseFloat(option.dataset.gst);
+    const stock = parseInt(option.dataset.stock);
+    const hsn = option.dataset.hsn || '';
+    const unit = option.dataset.unit || 'Pcs';
+    const qty = parseInt(qtyInput.value);
+
+    if (qty > stock) { alert('Insufficient stock!'); return; }
+
+    const discountPerItem = 0;
+    const taxableValue = (price * qty) - discountPerItem;
+    const gstAmount = (taxableValue * gstRate) / 100;
+    const total = taxableValue + gstAmount;
+
+    itemCounter++;
+    invoiceItems.push({
+        product_id: productId, quantity: qty, price: price, gst_rate: gstRate,
+        hsn: hsn, unit: unit, discount: discountPerItem,
+        taxable_value: taxableValue, gst_amount: gstAmount, total: total
+    });
+
+    const tbody = document.querySelector('#invoiceItems tbody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${itemCounter}</td><td>${productName}</td><td>${hsn}</td><td>${unit}</td>
+        <td>&#8377;${price.toFixed(2)}</td><td>${qty}</td>
+        <td><input type="number" class="form-control form-control-sm item-disc" value="0" min="0" style="width:70px" onchange="updateItemDisc(this, ${invoiceItems.length - 1})"></td>
+        <td>&#8377;${taxableValue.toFixed(2)}</td><td>${gstRate}%</td>
+        <td>&#8377;${gstAmount.toFixed(2)}</td><td>&#8377;${total.toFixed(2)}</td>
+        <td><button class="btn btn-sm btn-outline-danger" onclick="removeItem(this, ${invoiceItems.length - 1})"><i class="bi bi-trash"></i></button></td>`;
+    tbody.appendChild(tr);
+
+    updateSummary();
+    productSelect.selectedIndex = 0;
+    qtyInput.value = 1;
+});
+
+function updateItemDisc(input, index) {
+    const disc = parseFloat(input.value) || 0;
+    const item = invoiceItems[index];
+    item.discount = disc;
+    item.taxable_value = (item.price * item.quantity) - disc;
+    item.gst_amount = (item.taxable_value * item.gst_rate) / 100;
+    item.total = item.taxable_value + item.gst_amount;
+    const tr = input.closest('tr');
+    tr.cells[7].innerHTML = '&#8377;' + item.taxable_value.toFixed(2);
+    tr.cells[9].innerHTML = '&#8377;' + item.gst_amount.toFixed(2);
+    tr.cells[10].innerHTML = '&#8377;' + item.total.toFixed(2);
+    updateSummary();
+}
+
+function removeItem(btn, index) {
+    btn.closest('tr').remove();
+    invoiceItems.splice(index, 1);
+    renumberRows();
+    updateSummary();
+}
+
+function renumberRows() {
+    itemCounter = 0;
+    document.querySelectorAll('#invoiceItems tbody tr').forEach((tr, i) => {
+        tr.cells[0].textContent = i + 1;
+        itemCounter = i + 1;
+    });
+}
+
+    document.getElementById('discountInput').addEventListener('input', updateSummary);
+    document.getElementById('igstCheck').addEventListener('change', updateSummary);
+
+document.getElementById('resetBtn').addEventListener('click', function() {
+    if (!confirm('Reset all fields?')) return;
+    document.getElementById('custName').value = '';
+    document.getElementById('custPhone').value = '';
+    document.getElementById('custEmail').value = '';
+    document.getElementById('custGst').value = '';
+    document.getElementById('custState').value = '';
+    document.getElementById('dueDate').value = '';
+    document.getElementById('discountInput').value = '0';
+    document.getElementById('igstCheck').checked = false;
+    document.getElementById('reverseCharge').checked = false;
+    document.getElementById('productSelect').selectedIndex = 0;
+    document.getElementById('qtyInput').value = '1';
+    document.querySelector('#invoiceItems tbody').innerHTML = '';
+    invoiceItems = [];
+    itemCounter = 0;
+    updateSummary();
+});
+
+function updateSummary() {
+    let subtotal = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0, totalGst = 0;
+    const gstRates = new Set();
+    invoiceItems.forEach(item => {
+        subtotal += item.taxable_value;
+        totalGst += item.gst_amount;
+        gstRates.add(item.gst_rate);
+    });
+    const isIgst = document.getElementById('igstCheck').checked;
+    if (isIgst) {
+        totalIgst = totalGst;
+    } else {
+        totalCgst = totalGst / 2;
+        totalSgst = totalGst / 2;
+    }
+    const rates = Array.from(gstRates).sort((a,b) => a-b);
+    const rateLabel = rates.length === 1 ? ' @' + rates[0] + '%' : '';
+    const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+    const grandTotal = subtotal + totalGst - discount;
+
+    document.getElementById('subtotalDisplay').textContent = '\u20b9' + subtotal.toFixed(2);
+    document.getElementById('cgstLabel').textContent = 'CGST' + rateLabel + ':';
+    document.getElementById('cgstDisplay').textContent = '\u20b9' + totalCgst.toFixed(2);
+    document.getElementById('sgstLabel').textContent = 'SGST' + rateLabel + ':';
+    document.getElementById('sgstDisplay').textContent = '\u20b9' + totalSgst.toFixed(2);
+    document.getElementById('igstLabel').textContent = 'IGST' + rateLabel + ':';
+    document.getElementById('igstDisplay').textContent = '\u20b9' + totalIgst.toFixed(2);
+    document.getElementById('totalGstDisplay').textContent = '\u20b9' + totalGst.toFixed(2);
+    document.getElementById('discountDisplay').textContent = '-\u20b9' + discount.toFixed(2);
+    document.getElementById('grandTotalDisplay').textContent = '\u20b9' + grandTotal.toFixed(2);
+
+    if (isIgst) {
+        document.getElementById('cgstRow').style.display = 'none';
+        document.getElementById('sgstRow').style.display = 'none';
+        document.getElementById('igstRow').style.display = '';
+    } else {
+        document.getElementById('cgstRow').style.display = '';
+        document.getElementById('sgstRow').style.display = '';
+        document.getElementById('igstRow').style.display = 'none';
+    }
+}
+
+document.getElementById('createInvoiceBtn').addEventListener('click', function() {
+    const custName = document.getElementById('custName').value.trim();
+    const custPhone = document.getElementById('custPhone').value.trim();
+    if (!custName) { alert('Customer name is required'); return; }
+    if (!custPhone) { alert('Customer phone is required'); return; }
+    if (invoiceItems.length === 0) { alert('Add at least one item'); return; }
+
+    fetch('{{ url_for("create_invoice") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            customer_name: custName,
+            customer_phone: custPhone,
+            customer_email: document.getElementById('custEmail').value.trim(),
+            customer_gst: document.getElementById('custGst').value.trim(),
+            customer_address: '',
+            shipping_address: '',
+            customer_state: document.getElementById('custState').value.trim(),
+            place_of_supply: '',
+            due_date: document.getElementById('dueDate').value,
+            items: invoiceItems.map(i => ({
+                product_id: i.product_id, quantity: i.quantity,
+                unit: i.unit, discount: i.discount, taxable_value: i.taxable_value
+            })),
+            discount: parseFloat(document.getElementById('discountInput').value) || 0,
+            cess: 0,
+            reverse_charge: document.getElementById('reverseCharge').checked
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ url_for("view_invoice", id=0) }}'.replace('0', data.invoice_id);
+        } else {
+            alert(data.error || 'Error creating invoice');
+        }
+    })
+    .catch(err => alert('Error: ' + err));
+});
+
+document.querySelectorAll('input[name="invFilter"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const filter = this.value;
+        document.querySelectorAll('#recentInvoices tbody tr[data-status]').forEach(row => {
+            if (filter === 'all') {
+                row.style.display = '';
+            } else if (filter === 'paid') {
+                row.style.display = row.dataset.status === 'paid' ? '' : 'none';
+            } else if (filter === 'due') {
+                row.style.display = row.dataset.status !== 'paid' ? '' : 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
