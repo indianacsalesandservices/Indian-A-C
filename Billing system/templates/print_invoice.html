@@ -273,25 +273,13 @@
                     {% if invoice.customer.gst_number %}GSTIN: {{ invoice.customer.gst_number }}<br>{% endif %}
                     {% if invoice.customer.state %}State: {{ invoice.customer.state }}<br>{% endif %}
                     {% if invoice.place_of_supply %}<strong>Place of Supply:</strong> {{ invoice.place_of_supply }}<br>{% endif %}
-                    {% if invoice.reverse_charge %}<strong>Reverse Charge:</strong> Yes<br>{% endif %}
                     <strong>Mode of Payment:</strong>
-                    {% if invoice.payments %}
-                        {% set ns = namespace(modes='') %}
-                        {% for p in invoice.payments %}
-                            {% if p.payment_method %}
-                                {% set mode_title = p.payment_method|title %}
-                                {% if mode_title not in ns.modes %}
-                                    {% if ns.modes %}{% set ns.modes = ns.modes + ', ' %}{% endif %}
-                                    {% set ns.modes = ns.modes + mode_title %}
-                                {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if ns.modes %}{{ ns.modes }}{% else %}N/A{% endif %}
-                    {% elif invoice.payment_method %}
-                        {{ invoice.payment_method|title }}
-                    {% else %}
-                        N/A
-                    {% endif %}
+                    {%- if invoice.payments -%}
+                        {%- for p in invoice.payments -%}
+                            {%- if p.payment_method -%}{{ p.payment_method|title }}{%- endif -%}
+                            {%- if not loop.last %}, {% endif -%}
+                        {%- endfor -%}
+                    {%- else -%}N/A{%- endif -%}
                 </p>
             </div>
         </div>
@@ -300,7 +288,7 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Product</th>
+                    <th>Name</th>
                     <th>HSN</th>
                     <th>Unit</th>
                     <th class="text-center">Qty</th>
@@ -316,9 +304,17 @@
                 {% for item in invoice.items %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td>{{ item.product.name }}</td>
+                    <td>
+                        <strong>{{ item.product.name }}</strong>
+                        {% if item.product.description or item.product.brand or item.product.category %}
+                        <br><small style="color:#666;">
+                            {%- if item.product.description %}{{ item.product.description }}{% endif -%}
+                            {%- if item.product.brand %}{% if item.product.description %} | {% endif %}Brand: {{ item.product.brand }}{% endif -%}
+                            {%- if item.product.category %}{% if item.product.description or item.product.brand %} | {% endif %}{{ item.product.category }}{% endif -%}
+                        </small>{% endif %}
+                    </td>
                     <td>{{ item.product.hsn_code or '-' }}</td>
-                    <td>{{ item.unit or 'NOS' }}</td>
+                    <td>{{ item.product.unit if item.product and item.product.unit else 'NOS' }}</td>
                     <td class="text-center">{{ item.quantity }}</td>
                     <td class="text-right">&#8377;{{ "{:,.2f}".format(item.unit_price) }}</td>
                     <td class="text-right">{% if item.discount and item.discount > 0 %}&#8377;{{ "{:,.2f}".format(item.discount) }}{% else %}-{% endif %}</td>
@@ -330,12 +326,6 @@
                 {% endfor %}
             </tbody>
         </table>
-
-        {% set ns = namespace(rupees=0, paise=0) %}
-        {% set ns.rupees = invoice.grand_total|int %}
-        {% set ns.paise = ((invoice.grand_total - ns.rupees) * 100)|round %}
-        {% set ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'] %}
-        {% set tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'] %}
 
         <div class="summary-section">
             <div style="flex: 1;">
@@ -399,7 +389,7 @@
             <strong>Bill is mandatory to claim warranty.</strong><br>
             Please retain this invoice for future reference and warranty claims.<br>
             Any disputes shall be subject to local jurisdiction only.
-            {% if invoice.reverse_charge %}<br><strong>Reverse Charge Applicable:</strong> Tax is payable under reverse charge by the recipient.{% endif %}
+
         </div>
 
         {% set ns_paid2 = namespace(amount=0) %}

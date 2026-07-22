@@ -74,7 +74,7 @@
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>
-                        <th>Product</th>
+                        <th>Name</th>
                         <th>HSN</th>
                         <th>Unit</th>
                         <th class="text-center">Qty</th>
@@ -90,9 +90,17 @@
                     {% for item in invoice.items %}
                     <tr>
                         <td>{{ loop.index }}</td>
-                        <td>{{ item.product.name }}</td>
+                        <td>
+                            <strong>{{ item.product.name }}</strong>
+                            {% if item.product.description or item.product.brand or item.product.category %}
+                            <br><small class="text-muted">
+                                {%- if item.product.description %}{{ item.product.description }}{% endif -%}
+                                {%- if item.product.brand %}{% if item.product.description %} | {% endif %}Brand: {{ item.product.brand }}{% endif -%}
+                                {%- if item.product.category %}{% if item.product.description or item.product.brand %} | {% endif %}{{ item.product.category }}{% endif -%}
+                            </small>{% endif %}
+                        </td>
                         <td>{{ item.product.hsn_code or '-' }}</td>
-                        <td>{{ item.unit or 'NOS' }}</td>
+                        <td>{{ item.product.unit if item.product and item.product.unit else 'NOS' }}</td>
                         <td class="text-center">{{ item.quantity }}</td>
                         <td class="text-end">&#8377;{{ "{:,.2f}".format(item.unit_price) }}</td>
                         <td class="text-end">{% if item.discount and item.discount > 0 %}&#8377;{{ "{:,.2f}".format(item.discount) }}{% else %}-{% endif %}</td>

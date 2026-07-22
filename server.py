@@ -180,9 +180,12 @@ class Product(db.Model):
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
+    price_with_gst = db.Column(db.Float, default=0.0)
     stock = db.Column(db.Integer, default=0)
     gst_rate = db.Column(db.Float, default=18.0)
     hsn_code = db.Column(db.String(20))
+    brand = db.Column(db.String(100), default='')
+    category = db.Column(db.String(100), default='')
     unit = db.Column(db.String(20), default='Pcs')
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -205,6 +208,7 @@ class Invoice(db.Model):
     status = db.Column(db.String(20), default='unpaid')
     place_of_supply = db.Column(db.String(50))
     due_date = db.Column(db.String(20))
+    reverse_charge = db.Column(db.Boolean, default=False)
     user = db.relationship('BUser', backref='invoices_created')
     items = db.relationship('InvoiceItem', backref='invoice')
     payments = db.relationship('Payment', backref='invoice')
@@ -221,6 +225,11 @@ class InvoiceItem(db.Model):
     gst_amount = db.Column(db.Float, default=0.0)
     igst = db.Column(db.Float, default=0.0)
     total = db.Column(db.Float, nullable=False)
+    star_rating = db.Column(db.String(10), default='')
+    model_no = db.Column(db.String(100), default='')
+    series_no = db.Column(db.String(100), default='')
+    item_category = db.Column(db.String(100), default='')
+    ton_size = db.Column(db.String(50), default='')
     product = db.relationship('Product')
 
 class Payment(db.Model):
@@ -535,13 +544,24 @@ def add_product():
     if current_user.role != 'admin':
         flash('Admin only.', 'danger')
         return redirect('/billing/products')
+    price_in = float(request.form.get('price', 0))
+    gst_rate = float(request.form.get('gst_rate', 18))
+    price_type = request.form.get('price_type', 'without_gst')
+    if price_type == 'with_gst':
+        price = round(price_in * 100 / (100 + gst_rate), 2)
+        price_with_gst = price_in
+    else:
+        price = price_in
+        price_with_gst = round(price_in * (100 + gst_rate) / 100, 2)
     p = Product(
         name=request.form.get('name', '').strip(),
         description=request.form.get('description', '').strip(),
-        price=float(request.form.get('price', 0)),
+        price=price, price_with_gst=price_with_gst,
         stock=int(request.form.get('stock', 0)),
-        gst_rate=float(request.form.get('gst_rate', 18)),
+        gst_rate=gst_rate,
         hsn_code=request.form.get('hsn_code', '').strip(),
+        brand=request.form.get('brand', '').strip(),
+        category=request.form.get('category', '').strip(),
         unit=request.form.get('unit', 'Pcs').strip()
     )
     db.session.add(p)
@@ -558,10 +578,20 @@ def edit_product(id):
     p = Product.query.get_or_404(id)
     p.name = request.form.get('name', p.name)
     p.description = request.form.get('description', p.description)
-    p.price = float(request.form.get('price', p.price))
+    price_in = float(request.form.get('price', p.price))
+    gst_rate = float(request.form.get('gst_rate', p.gst_rate))
+    price_type = request.form.get('price_type', 'without_gst')
+    if price_type == 'with_gst':
+        p.price = round(price_in * 100 / (100 + gst_rate), 2)
+        p.price_with_gst = price_in
+    else:
+        p.price = price_in
+        p.price_with_gst = round(price_in * (100 + gst_rate) / 100, 2)
     p.stock = int(request.form.get('stock', p.stock))
-    p.gst_rate = float(request.form.get('gst_rate', p.gst_rate))
+    p.gst_rate = gst_rate
     p.hsn_code = request.form.get('hsn_code', p.hsn_code)
+    p.brand = request.form.get('brand', p.brand)
+    p.category = request.form.get('category', p.category)
     p.unit = request.form.get('unit', p.unit)
     db.session.commit()
     flash('Product updated!', 'success')
@@ -577,6 +607,61 @@ def delete_product(id):
     p.is_active = False
     db.session.commit()
     flash('Product deleted!', 'success')
+    return redirect('/billing/products')
+
+@app.route('/billing/products/upload-excel', methods=['POST'])
+@login_required
+def upload_products_excel():
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Admin only'}), 403
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file'}), 400
+    f = request.files['file']
+    if not f.filename.endswith(('.xlsx', '.xls')):
+        return jsonify({'success': False, 'error': 'Excel file required (.xlsx or .xls)'}), 400
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(f)
+        ws = wb.active
+        added = 0
+        errors = []
+        headers = [cell.value.strip().lower().replace(' ', '_') if cell.value else '' for cell in ws[1]]
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not any(row):
+                continue
+            data = dict(zip(headers, [str(c) if c is not None else '' for c in row]))
+            try:
+                gst = float(data.get('gst_rate', 18))
+                price_in = float(data.get('price', 0))
+                price_type = data.get('price_type', 'without_gst')
+                if price_type == 'with_gst':
+                    price = round(price_in * 100 / (100 + gst), 2)
+                    price_with_gst = price_in
+                else:
+                    price = price_in
+                    price_with_gst = round(price_in * (100 + gst) / 100, 2)
+                p = Product(
+                    name=data.get('name', ''),
+                    description=data.get('description', ''),
+                    price=price, price_with_gst=price_with_gst,
+                    stock=int(float(data.get('stock', 0))),
+                    gst_rate=gst,
+                    hsn_code=data.get('hsn_code', ''),
+                    brand=data.get('brand', ''),
+                    category=data.get('category', ''),
+                    unit=data.get('unit', 'Pcs')
+                )
+                db.session.add(p)
+                added += 1
+            except Exception as e:
+                errors.append(f'Row {added + 2}: {e}')
+        db.session.commit()
+        msg = f'{added} products added'
+        if errors:
+            msg += f', {len(errors)} errors: {"; ".join(errors[:3])}'
+        flash(msg, 'success' if not errors else 'warning')
+    except Exception as e:
+        flash(f'Error reading Excel: {e}', 'danger')
     return redirect('/billing/products')
 
 @app.route('/billing/billing')
@@ -644,7 +729,12 @@ def create_invoice():
         inv_item = InvoiceItem(
             product_id=product.id, quantity=qty, unit_price=unit_price,
             discount=item_discount, taxable_value=taxable, gst_rate=gst_rate,
-            gst_amount=gst_amount, igst=igst, total=total
+            gst_amount=gst_amount, igst=igst, total=total,
+            star_rating=item_data.get('star_rating', ''),
+            model_no=item_data.get('model_no', ''),
+            series_no=item_data.get('series_no', ''),
+            item_category=item_data.get('item_category', product.category or ''),
+            ton_size=item_data.get('ton_size', '')
         )
         invoice_items.append(inv_item)
         subtotal += taxable
@@ -663,7 +753,7 @@ def create_invoice():
         subtotal=subtotal, cgst=total_cgst, sgst=total_sgst, igst=total_igst,
         total_tax=total_tax, total_amount=subtotal, discount=discount,
         round_off=round_off, grand_total=grand_total, status='unpaid',
-        place_of_supply=place_of_supply
+        place_of_supply=place_of_supply, reverse_charge=reverse_charge
     )
     db.session.add(invoice)
     db.session.flush()
@@ -705,20 +795,22 @@ def download_invoice_pdf(id):
     is_paid = (invoice.grand_total - paid_amount) <= 0
     status_text = 'PAID' if invoice.status == 'paid' else ('PARTIAL' if invoice.status == 'partial' else 'UNPAID')
 
+    def _w(n):
+        a = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+             'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen']
+        b = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety']
+        if n < 20: return a[n]
+        return (b[n // 10] + ' ' + a[n % 10]).strip()
+
     def amount_words(num):
-        ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
-                'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
-                'Seventeen', 'Eighteen', 'Nineteen']
-        tens_w = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
         n = int(num)
         if n == 0: return 'Zero'
         parts = []
-        if n >= 10000000: parts.append(ones[n // 10000000] + ' Crore'); n %= 10000000
-        if n >= 100000: parts.append(ones[n // 100000] + ' Lakh'); n %= 100000
-        if n >= 1000: parts.append(ones[n // 1000] + ' Thousand'); n %= 1000
-        if n >= 100: parts.append(ones[n // 100] + ' Hundred'); n %= 100
-        if n >= 20: parts.append(tens_w[n // 10]); n %= 10
-        if n > 0: parts.append(ones[n])
+        if n >= 10000000: parts.append(_w(n // 10000000) + ' Crore'); n %= 10000000
+        if n >= 100000: parts.append(_w(n // 100000) + ' Lakh'); n %= 100000
+        if n >= 1000: parts.append(_w(n // 1000) + ' Thousand'); n %= 1000
+        if n >= 100: parts.append(_w(n // 100) + ' Hundred'); n %= 100
+        if n > 0: parts.append(_w(n))
         return ' '.join(parts)
     dec = round((invoice.grand_total - int(invoice.grand_total)) * 100)
     words = amount_words(int(invoice.grand_total))
@@ -863,7 +955,7 @@ def download_invoice_pdf(id):
     pdf.set_fill_color(0, 0, 128)
     pdf.set_text_color(255, 255, 255)
     col_w = [8, 38, 16, 12, 10, 18, 14, 18, 12, 18, 24]
-    headers = ['#', 'Product', 'HSN', 'Unit', 'Qty', 'Rate', 'Disc', 'Taxable', 'GST%', 'GST Amt', 'Total']
+    headers = ['#', 'Name', 'HSN', 'Unit', 'Qty', 'Rate', 'Disc', 'Taxable', 'GST%', 'GST Amt', 'Total']
     for i, h in enumerate(headers):
         align = 'C' if i in [0, 3, 4, 8] else ('R' if i >= 5 else 'L')
         pdf.cell(col_w[i], 6, h, border=1, align=align, fill=True)
@@ -879,9 +971,15 @@ def download_invoice_pdf(id):
             fill = False
         taxable = item.taxable_value if item.taxable_value else (item.unit_price * item.quantity)
         unit = getattr(item, 'unit', None) or getattr(item.product, 'unit', 'NOS') or 'NOS'
+        desc = []
+        if item.product.description: desc.append(item.product.description[:20])
+        if item.product.brand: desc.append('Brand:' + item.product.brand)
+        if item.product.category: desc.append(item.product.category)
+        prod_text = (item.product.name or '')[:20]
+        if desc: prod_text += '\n' + ' '.join(desc)[:30]
         row = [
             str(idx),
-            (item.product.name or '')[:22],
+            prod_text,
             item.product.hsn_code or '-',
             unit,
             str(item.quantity),
@@ -892,10 +990,19 @@ def download_invoice_pdf(id):
             f'{item.gst_amount:,.2f}',
             f'{item.total:,.2f}'
         ]
+        # Save x position, use multi_cell for product column to allow newline
+        x0 = pdf.get_x()
+        y0 = pdf.get_y()
+        row_h = 8 if desc else 5.5
         for i, val in enumerate(row):
+            pdf.set_xy(x0 + sum(col_w[:i]), y0)
             align = 'C' if i in [0, 3, 4, 8] else ('R' if i >= 5 else 'L')
-            pdf.cell(col_w[i], 5.5, val, border=1, align=align, fill=fill)
-        pdf.ln()
+            if i == 1:
+                pdf.multi_cell(col_w[i], row_h / 2, val, border=1, align=align, fill=fill)
+            else:
+                pdf.cell(col_w[i], row_h, val, border=1, align=align, fill=fill)
+        if desc:
+            pdf.set_y(max(pdf.get_y(), y0 + row_h))
 
     pdf.ln(3)
 
@@ -1549,13 +1656,15 @@ def view_report():
 @login_required
 def view_invoice(id):
     invoice = Invoice.query.get_or_404(id)
-    return render_template('invoice.html', invoice=invoice)
+    company = CompanySettings.query.first()
+    return render_template('invoice.html', invoice=invoice, company=company)
 
 @app.route('/billing/invoice/<int:id>/print')
 @login_required
 def print_invoice(id):
     invoice = Invoice.query.get_or_404(id)
-    return render_template('print_invoice.html', invoice=invoice)
+    company = CompanySettings.query.first()
+    return render_template('print_invoice.html', invoice=invoice, company=company, now=datetime.now())
 
 @app.route('/billing/<path:filename>')
 def serve_billing_static(filename):
@@ -2411,9 +2520,33 @@ def serve_upload(filename):
     return send_from_directory(UPLOAD_DIR, filename)
 
 
+def auto_migrate():
+    try:
+        from sqlalchemy import inspect as sa_inspect
+        inspector = sa_inspect(db.engine)
+        migrations = []
+        table_columns = {
+            'product': ['price_with_gst', 'brand', 'category'],
+            'invoice_item': ['star_rating', 'model_no', 'series_no', 'item_category', 'ton_size'],
+            'invoice': ['reverse_charge'],
+        }
+        for table, cols in table_columns.items():
+            existing = [c['name'] for c in inspector.get_columns(table)]
+            for col in cols:
+                if col not in existing:
+                    col_type = 'VARCHAR(100)' if col != 'price_with_gst' else 'FLOAT DEFAULT 0'
+                    db.session.execute(db.text(f'ALTER TABLE {table} ADD COLUMN {col} {col_type}'))
+                    migrations.append(f'{table}.{col}')
+        if migrations:
+            db.session.commit()
+            print(f"[MIGRATE] Added columns: {', '.join(migrations)}")
+    except Exception as e:
+        print(f"[MIGRATE] Warning: {e}")
+
 with app.app_context():
     try:
         db.create_all()
+        auto_migrate()
         if not BUser.query.filter_by(username='Ramesh').first():
             db.session.add(BUser(username='Ramesh', password=generate_password_hash('Indiana/c'), full_name='Ramesh', role='admin'))
         if not BUser.query.filter_by(username='staff').first():

@@ -87,6 +87,28 @@
                 </div>
             </div>
         </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Bank Details</h6></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" class="form-control" name="bank_name" value="{{ company.bank_name or '' }}" placeholder="e.g. State Bank of India">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Account Number</label>
+                        <input type="text" class="form-control" name="bank_account" value="{{ company.bank_account or '' }}" placeholder="e.g. 12345678901">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" class="form-control" name="bank_ifsc" value="{{ company.bank_ifsc or '' }}" maxlength="11" placeholder="e.g. SBIN0001234">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="col-lg-4">

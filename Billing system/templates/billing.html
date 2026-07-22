@@ -68,7 +68,7 @@
                         <select class="form-select" id="productSelect">
                             <option value="">-- Select Product --</option>
                             {% for p in products %}
-                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-gst="{{ p.gst_rate }}" data-stock="{{ p.stock }}" data-hsn="{{ p.hsn_code or '' }}" data-unit="{{ p.unit or 'NOS' }}">{{ p.name }} - &#8377;{{ "{:,.2f}".format(p.price) }} (GST: {{ p.gst_rate }}%, Stock: {{ p.stock }})</option>
+                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-gst="{{ p.gst_rate }}" data-stock="{{ p.stock }}" data-hsn="{{ p.hsn_code or '' }}" data-unit="{{ p.unit or 'NOS' }}" data-brand="{{ p.brand or '' }}" data-category="{{ p.category or '' }}">{{ p.name }} - &#8377;{{ "{:,.2f}".format(p.price) }} (GST: {{ p.gst_rate }}%, Stock: {{ p.stock }})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -252,10 +252,13 @@ document.getElementById('addItemBtn').addEventListener('click', function() {
     const total = taxableValue + gstAmount;
 
     itemCounter++;
+    const brand = option.dataset.brand || '';
+    const category = option.dataset.category || '';
     invoiceItems.push({
-        product_id: productId, quantity: qty, price: price, gst_rate: gstRate,
+        product_id: productId, quantity: qty, unit_price: price, gst_rate: gstRate,
         hsn: hsn, unit: unit, discount: discountPerItem,
-        taxable_value: taxableValue, gst_amount: gstAmount, total: total
+        taxable_value: taxableValue, gst_amount: gstAmount, total: total,
+        brand: brand, category: category
     });
 
     const tbody = document.querySelector('#invoiceItems tbody');
@@ -277,7 +280,7 @@ function updateItemDisc(input, index) {
     const disc = parseFloat(input.value) || 0;
     const item = invoiceItems[index];
     item.discount = disc;
-    item.taxable_value = (item.price * item.quantity) - disc;
+    item.taxable_value = (item.unit_price * item.quantity) - disc;
     item.gst_amount = (item.taxable_value * item.gst_rate) / 100;
     item.total = item.taxable_value + item.gst_amount;
     const tr = input.closest('tr');
@@ -387,8 +390,10 @@ document.getElementById('createInvoiceBtn').addEventListener('click', function()
             place_of_supply: '',
             due_date: document.getElementById('dueDate').value,
             items: invoiceItems.map(i => ({
-                product_id: i.product_id, quantity: i.quantity,
-                unit: i.unit, discount: i.discount, taxable_value: i.taxable_value
+                product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price,
+                unit: i.unit, discount: i.discount, taxable_value: i.taxable_value,
+                gst_rate: i.gst_rate, gst_amount: i.gst_amount, total: i.total,
+                item_category: i.category
             })),
             discount: parseFloat(document.getElementById('discountInput').value) || 0,
             cess: 0,

@@ -13,6 +13,9 @@
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
         <i class="bi bi-plus-circle"></i> Add Product
     </button>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
+        <i class="bi bi-file-earmark-excel"></i> Upload Excel
+    </button>
     {% endif %}
 </div>
 
@@ -67,7 +70,36 @@
                             <div class="mb-3"><label class="form-label">Name</label><input type="text" class="form-control" name="name" value="{{ p.name }}" required></div>
                             <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2">{{ p.description or '' }}</textarea></div>
                             <div class="row">
-                                <div class="col-md-6 mb-3"><label class="form-label">Price (&#8377;)</label><input type="number" class="form-control" name="price" value="{{ p.price }}" step="0.01" required></div>
+                                <div class="col-md-6 mb-3"><label class="form-label">Brand</label><input type="text" class="form-control" name="brand" value="{{ p.brand or '' }}"></div>
+                                <div class="col-md-6 mb-3"><label class="form-label">Category</label>
+                                    <select class="form-select" name="category">
+                                        <option value="">Select Category</option>
+                                        <option value="AC" {% if p.category == 'AC' %}selected{% endif %}>AC</option>
+                                        <option value="Refrigerator" {% if p.category == 'Refrigerator' %}selected{% endif %}>Refrigerator</option>
+                                        <option value="Television" {% if p.category == 'Television' %}selected{% endif %}>Television</option>
+                                        <option value="Washing Machine" {% if p.category == 'Washing Machine' %}selected{% endif %}>Washing Machine</option>
+                                        <option value="Microwave" {% if p.category == 'Microwave' %}selected{% endif %}>Microwave</option>
+                                        <option value="Water Heater" {% if p.category == 'Water Heater' %}selected{% endif %}>Water Heater</option>
+                                        <option value="Furniture" {% if p.category == 'Furniture' %}selected{% endif %}>Furniture</option>
+                                        <option value="Other" {% if p.category == 'Other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Price (&#8377;)</label>
+                                    <input type="number" class="form-control" name="price" value="{{ p.price }}" step="0.01" required>
+                                    <div class="mt-2">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="price_type" value="without_gst" checked>
+                                            <label class="form-check-label">Without GST</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="price_type" value="with_gst">
+                                            <label class="form-check-label">With GST</label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="col-md-6 mb-3"><label class="form-label">Stock</label><input type="number" class="form-control" name="stock" value="{{ p.stock }}" required></div>
                             </div>
                             <div class="row">
@@ -198,7 +230,36 @@
                     <div class="mb-3"><label class="form-label">Name *</label><input type="text" class="form-control" name="name" required></div>
                     <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2"></textarea></div>
                     <div class="row">
-                        <div class="col-md-6 mb-3"><label class="form-label">Price (&#8377;) *</label><input type="number" class="form-control" name="price" step="0.01" required></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Brand</label><input type="text" class="form-control" name="brand" placeholder="e.g. Samsung, Voltas"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Category</label>
+                            <select class="form-select" name="category">
+                                <option value="">Select Category</option>
+                                <option value="AC">AC</option>
+                                <option value="Refrigerator">Refrigerator</option>
+                                <option value="Television">Television</option>
+                                <option value="Washing Machine">Washing Machine</option>
+                                <option value="Microwave">Microwave</option>
+                                <option value="Water Heater">Water Heater</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Price (&#8377;) *</label>
+                            <input type="number" class="form-control" name="price" step="0.01" required>
+                            <div class="mt-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="price_type" value="without_gst" checked>
+                                    <label class="form-check-label">Without GST</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="price_type" value="with_gst">
+                                    <label class="form-check-label">With GST</label>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-6 mb-3"><label class="form-label">Stock *</label><input type="number" class="form-control" name="stock" value="0" required></div>
                     </div>
                     <div class="row">
@@ -298,6 +359,33 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if current_user.role == 'admin' %}
+<div class="modal fade" id="uploadExcelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('upload_products_excel') }}" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Products from Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Upload an Excel file (.xlsx) with product data. Headers must match:</p>
+                    <code>name, description, price, stock, gst_rate, hsn_code, brand, category, unit, price_type</code>
+                    <div class="mt-3">
+                        <label class="form-label">Select Excel File</label>
+                        <input type="file" class="form-control" name="file" accept=".xlsx,.xls" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Upload & Add Products</button>
                 </div>
             </form>
         </div>
