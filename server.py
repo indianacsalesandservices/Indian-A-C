@@ -609,6 +609,17 @@ def delete_product(id):
     flash('Product deleted!', 'success')
     return redirect('/billing/products')
 
+@app.route('/billing/products/delete-all', methods=['POST'])
+@login_required
+def delete_all_products():
+    if current_user.role != 'admin':
+        flash('Admin only.', 'danger')
+        return redirect('/billing/products')
+    Product.query.filter_by(is_active=True).update({'is_active': False})
+    db.session.commit()
+    flash('All products deleted!', 'success')
+    return redirect('/billing/products')
+
 @app.route('/billing/products/upload-excel', methods=['POST'])
 @login_required
 def upload_products_excel():

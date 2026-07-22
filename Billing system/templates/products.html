@@ -16,6 +16,9 @@
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
         <i class="bi bi-file-earmark-excel"></i> Upload Excel
     </button>
+    <button class="btn btn-danger" onclick="confirmDeleteAll()">
+        <i class="bi bi-trash"></i> Delete All
+    </button>
     {% endif %}
 </div>
 
@@ -629,5 +632,15 @@ document.addEventListener('click', function(e) {
         document.querySelectorAll('.hsn-dropdown').forEach(function(d) { d.style.display = 'none'; });
     }
 });
+
+function confirmDeleteAll() {
+    if (confirm('Delete ALL products? This will deactivate every product and cannot be undone.')) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("delete_all_products") }}';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 {% endblock %}
