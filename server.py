@@ -3,6 +3,7 @@ import sys
 import json
 import base64
 import secrets
+import mimetypes
 from datetime import datetime, date, timedelta
 from io import BytesIO
 
@@ -18,6 +19,9 @@ ENCRYPTION_KEY_FILE = os.path.join(BASE_DIR, '.server_key')
 IS_VERCEL = os.environ.get('VERCEL', '') == '1'
 
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
+SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://xpkaoqwywhvliwbbuwoh.supabase.co')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhwa2FvcXd5d2h2bGl3YmJ1d29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NTMxMzcsImV4cCI6MjEwMDIyOTEzN30.HEG6AD625_UQ8tD8CH-zHMKWOrPPFb-tk_iJCA1i3X4')
+SUPABASE_STORAGE_BUCKET = os.environ.get('SUPABASE_STORAGE_BUCKET', 'uploads')
 TURSO_DATABASE_URL = os.environ.get('TURSO_DATABASE_URL', '')
 TURSO_AUTH_TOKEN = os.environ.get('TURSO_AUTH_TOKEN', '')
 
@@ -2346,11 +2350,28 @@ def api_cloud_full_pull():
 
 
 # ============================================
-# File Upload/Download for Staff Documents
+# File Upload/Download with Supabase Storage
 # ============================================
 UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
 if not IS_VERCEL:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+_supabase_storage = None
+
+def get_supabase_storage():
+    global _supabase_storage
+    if _supabase_storage is None and SUPABASE_URL and SUPABASE_KEY:
+        try:
+            from supabase import create_client
+            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            _supabase_storage = client.storage
+            try:
+                _supabase_storage.get_bucket(SUPABASE_STORAGE_BUCKET)
+            except Exception:
+                _supabase_storage.create_bucket(SUPABASE_STORAGE_BUCKET, public=True)
+        except Exception as e:
+            print(f"[Storage] Supabase init failed: {e}")
+    return _supabase_storage
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
@@ -2359,15 +2380,34 @@ def upload_file():
     f = request.files['file']
     if not f.filename:
         return jsonify({'success': False, 'error': 'No filename'}), 400
-    import io
-    if IS_VERCEL:
-        return jsonify({'success': False, 'error': 'Upload requires local deployment'}), 503
-    f.stream = io.BytesIO(file_data)
+
+    safe_name = f"{int(datetime.now().timestamp() * 1000)}_{f.filename.replace(' ', '_')}"
+
+    storage = get_supabase_storage()
+    if storage:
+        try:
+            file_bytes = f.read()
+            content_type = mimetypes.guess_type(f.filename)[0] or 'application/octet-stream'
+            storage.from_(SUPABASE_STORAGE_BUCKET).upload(safe_name, file_bytes, {'content-type': content_type})
+            public_url = storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(safe_name)
+            print(f"[Storage] Uploaded to Supabase: {public_url}")
+            return jsonify({'success': True, 'filename': safe_name, 'original': f.filename, 'url': public_url})
+        except Exception as e:
+            print(f"[Storage] Supabase upload failed, falling back to local: {e}")
+            f.seek(0)
+
     f.save(os.path.join(UPLOAD_DIR, safe_name))
     return jsonify({'success': True, 'filename': safe_name, 'original': f.filename})
 
 @app.route('/uploads/<path:filename>')
 def serve_upload(filename):
+    storage = get_supabase_storage()
+    if storage:
+        try:
+            public_url = storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(filename)
+            return redirect(public_url)
+        except Exception:
+            pass
     return send_from_directory(UPLOAD_DIR, filename)
 
 
