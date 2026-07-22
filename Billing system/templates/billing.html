@@ -50,6 +50,10 @@
                     </div>
                     <div class="col-md-6 d-flex align-items-end gap-3">
                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="applyGstBilling" checked>
+                            <label class="form-check-label" for="applyGstBilling">Apply GST</label>
+                        </div>
+                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="igstCheck">
                             <label class="form-check-label" for="igstCheck">IGST (Interstate)</label>
                         </div>
@@ -248,7 +252,8 @@ document.getElementById('addItemBtn').addEventListener('click', function() {
 
     const discountPerItem = 0;
     const taxableValue = (price * qty) - discountPerItem;
-    const gstAmount = (taxableValue * gstRate) / 100;
+    const applyGst = document.getElementById('applyGstBilling').checked;
+    const gstAmount = applyGst ? (taxableValue * gstRate) / 100 : 0;
     const total = taxableValue + gstAmount;
 
     itemCounter++;
@@ -282,7 +287,8 @@ function updateItemDisc(input, index) {
     const item = invoiceItems[index];
     item.discount = disc;
     item.taxable_value = (item.unit_price * item.quantity) - disc;
-    item.gst_amount = (item.taxable_value * item.gst_rate) / 100;
+    const applyGst = document.getElementById('applyGstBilling').checked;
+    item.gst_amount = applyGst ? (item.taxable_value * item.gst_rate) / 100 : 0;
     item.total = item.taxable_value + item.gst_amount;
     const tr = input.closest('tr');
     const cells = tr.querySelectorAll('td');
@@ -296,8 +302,14 @@ function updateItemTotal(input, index) {
     const total = parseFloat(input.value) || 0;
     const item = invoiceItems[index];
     item.total = total;
-    item.taxable_value = total * 100 / (100 + item.gst_rate);
-    item.gst_amount = total - item.taxable_value;
+    const applyGst = document.getElementById('applyGstBilling').checked;
+    if (applyGst) {
+        item.taxable_value = total * 100 / (100 + item.gst_rate);
+        item.gst_amount = total - item.taxable_value;
+    } else {
+        item.taxable_value = total;
+        item.gst_amount = 0;
+    }
     item.discount = Math.max(0, (item.unit_price * item.quantity) - item.taxable_value);
     const tr = input.closest('tr');
     const cells = tr.querySelectorAll('td');

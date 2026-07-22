@@ -546,11 +546,11 @@ def add_product():
         return redirect('/billing/products')
     price_in = float(request.form.get('price', 0))
     gst_rate = float(request.form.get('gst_rate', 18))
-    price_type = request.form.get('price_type', 'without_gst')
-    if price_type == 'with_gst':
-        price_with_gst = price_in
-    else:
+    apply_gst = request.form.get('apply_gst') == 'on'
+    if apply_gst:
         price_with_gst = round(price_in * (100 + gst_rate) / 100, 2)
+    else:
+        price_with_gst = price_in
     p = Product(
         name=request.form.get('name', '').strip(),
         description=request.form.get('description', '').strip(),
@@ -578,12 +578,12 @@ def edit_product(id):
     p.description = request.form.get('description', p.description)
     price_in = float(request.form.get('price', p.price))
     gst_rate = float(request.form.get('gst_rate', p.gst_rate))
-    price_type = request.form.get('price_type', 'without_gst')
+    apply_gst = request.form.get('apply_gst') == 'on'
     p.price = price_in
-    if price_type == 'with_gst':
-        p.price_with_gst = price_in
-    else:
+    if apply_gst:
         p.price_with_gst = round(price_in * (100 + gst_rate) / 100, 2)
+    else:
+        p.price_with_gst = price_in
     p.stock = int(request.form.get('stock', p.stock))
     p.gst_rate = gst_rate
     p.hsn_code = request.form.get('hsn_code', p.hsn_code)
@@ -633,7 +633,7 @@ def upload_products_excel():
         ws = wb.active
         added = 0
         errors = []
-        default_price_type = request.form.get('price_type', 'without_gst')
+        apply_gst = request.form.get('apply_gst') == 'on'
         headers = [cell.value.strip().lower().replace(' ', '_') if cell.value else '' for cell in ws[1]]
         for row in ws.iter_rows(min_row=2, values_only=True):
             if not any(row):
@@ -642,11 +642,10 @@ def upload_products_excel():
             try:
                 gst = float(data.get('gst_rate', 18))
                 price_in = float(data.get('price', 0))
-                price_type = data.get('price_type', default_price_type)
-                if price_type == 'with_gst':
-                    price_with_gst = price_in
-                else:
+                if apply_gst:
                     price_with_gst = round(price_in * (100 + gst) / 100, 2)
+                else:
+                    price_with_gst = price_in
                 p = Product(
                     name=data.get('name', ''),
                     description=data.get('description', ''),

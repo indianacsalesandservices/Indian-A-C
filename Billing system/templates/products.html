@@ -93,13 +93,9 @@
                                     <label class="form-label">Price (&#8377;)</label>
                                     <input type="number" class="form-control" name="price" value="{{ p.price }}" step="0.01" required>
                                     <div class="mt-2">
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="price_type" value="without_gst" checked>
-                                            <label class="form-check-label">Without GST</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="price_type" value="with_gst">
-                                            <label class="form-check-label">With GST</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="apply_gst" id="applyGstEdit{{ p.id }}" {% if p.price_with_gst and p.price_with_gst > p.price %}checked{% endif %}>
+                                            <label class="form-check-label" for="applyGstEdit{{ p.id }}">Apply GST <small class="text-muted">(adds GST to price)</small></label>
                                         </div>
                                     </div>
                                 </div>
@@ -253,13 +249,9 @@
                             <label class="form-label">Price (&#8377;) *</label>
                             <input type="number" class="form-control" name="price" step="0.01" required>
                             <div class="mt-2">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="price_type" value="without_gst" checked>
-                                    <label class="form-check-label">Without GST</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="price_type" value="with_gst">
-                                    <label class="form-check-label">With GST</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="apply_gst" id="applyGstAdd" checked>
+                                    <label class="form-check-label" for="applyGstAdd">Apply GST <small class="text-muted">(adds GST to price)</small></label>
                                 </div>
                             </div>
                         </div>
@@ -382,16 +374,9 @@
                     <p class="text-muted">Upload an Excel file (.xlsx) with product data. Headers must match:</p>
                     <code>name, description, price, stock, gst_rate, hsn_code, brand, category, unit</code>
                     <div class="mt-3">
-                        <label class="form-label">Price Type</label>
-                        <div class="mt-1">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="price_type" value="without_gst" checked>
-                                <label class="form-check-label">Without GST</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="price_type" value="with_gst">
-                                <label class="form-check-label">With GST</label>
-                            </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="apply_gst" id="applyGstExcel" checked>
+                            <label class="form-check-label" for="applyGstExcel">Apply GST <small class="text-muted">(adds GST to uploaded prices)</small></label>
                         </div>
                     </div>
                     <div class="mt-3">
