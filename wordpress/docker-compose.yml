@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: wp_mysql
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MYSQL_DATABASE: "${DB_NAME:-wordpress}"
+      MYSQL_USER: "${DB_USER:-wpuser}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-wpsecret}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  wordpress:
+    image: wordpress:latest
+    container_name: wp_site
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: "${DB_NAME:-wordpress}"
+      WORDPRESS_DB_USER: "${DB_USER:-wpuser}"
+      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD:-wpsecret}"
+      WORDPRESS_TABLE_PREFIX: "${WP_TABLE_PREFIX:-wp_}"
+    volumes:
+      - wp_data:/var/www/html
+      - ./theme:/var/www/html/wp-content/themes/indian-ac
+    ports:
+      - "8080:80"
+
+volumes:
+  mysql_data:
+  wp_data:
