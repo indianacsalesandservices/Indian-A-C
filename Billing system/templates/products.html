@@ -380,7 +380,20 @@
                 </div>
                 <div class="modal-body">
                     <p class="text-muted">Upload an Excel file (.xlsx) with product data. Headers must match:</p>
-                    <code>name, description, price, stock, gst_rate, hsn_code, brand, category, unit, price_type</code>
+                    <code>name, description, price, stock, gst_rate, hsn_code, brand, category, unit</code>
+                    <div class="mt-3">
+                        <label class="form-label">Price Type</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="price_type" value="without_gst" checked>
+                                <label class="form-check-label">Without GST</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="price_type" value="with_gst">
+                                <label class="form-check-label">With GST</label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="mt-3">
                         <label class="form-label">Select Excel File</label>
                         <input type="file" class="form-control" name="file" accept=".xlsx,.xls" required>
