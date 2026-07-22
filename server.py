@@ -548,15 +548,13 @@ def add_product():
     gst_rate = float(request.form.get('gst_rate', 18))
     price_type = request.form.get('price_type', 'without_gst')
     if price_type == 'with_gst':
-        price = round(price_in * 100 / (100 + gst_rate), 2)
         price_with_gst = price_in
     else:
-        price = price_in
         price_with_gst = round(price_in * (100 + gst_rate) / 100, 2)
     p = Product(
         name=request.form.get('name', '').strip(),
         description=request.form.get('description', '').strip(),
-        price=price, price_with_gst=price_with_gst,
+        price=price_in, price_with_gst=price_with_gst,
         stock=int(request.form.get('stock', 0)),
         gst_rate=gst_rate,
         hsn_code=request.form.get('hsn_code', '').strip(),
@@ -581,11 +579,10 @@ def edit_product(id):
     price_in = float(request.form.get('price', p.price))
     gst_rate = float(request.form.get('gst_rate', p.gst_rate))
     price_type = request.form.get('price_type', 'without_gst')
+    p.price = price_in
     if price_type == 'with_gst':
-        p.price = round(price_in * 100 / (100 + gst_rate), 2)
         p.price_with_gst = price_in
     else:
-        p.price = price_in
         p.price_with_gst = round(price_in * (100 + gst_rate) / 100, 2)
     p.stock = int(request.form.get('stock', p.stock))
     p.gst_rate = gst_rate
@@ -647,15 +644,13 @@ def upload_products_excel():
                 price_in = float(data.get('price', 0))
                 price_type = data.get('price_type', default_price_type)
                 if price_type == 'with_gst':
-                    price = round(price_in * 100 / (100 + gst), 2)
                     price_with_gst = price_in
                 else:
-                    price = price_in
                     price_with_gst = round(price_in * (100 + gst) / 100, 2)
                 p = Product(
                     name=data.get('name', ''),
                     description=data.get('description', ''),
-                    price=price, price_with_gst=price_with_gst,
+                    price=price_in, price_with_gst=price_with_gst,
                     stock=int(float(data.get('stock', 0))),
                     gst_rate=gst,
                     hsn_code=data.get('hsn_code', ''),
