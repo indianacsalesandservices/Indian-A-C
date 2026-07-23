@@ -57,10 +57,6 @@
                             <input class="form-check-input" type="checkbox" id="igstCheck">
                             <label class="form-check-label" for="igstCheck">IGST (Interstate)</label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="reverseCharge">
-                            <label class="form-check-label" for="reverseCharge">Reverse Charge</label>
-                        </div>
                     </div>
                 </div>
 
@@ -72,7 +68,7 @@
                         <select class="form-select" id="productSelect">
                             <option value="">-- Select Product --</option>
                             {% for p in products %}
-                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-gst="{{ p.gst_rate }}" data-stock="{{ p.stock }}" data-hsn="{{ p.hsn_code or '' }}" data-unit="{{ p.unit or 'NOS' }}" data-brand="{{ p.brand or '' }}" data-category="{{ p.category or '' }}">{{ p.name }} - &#8377;{{ "{:,.2f}".format(p.price) }} (GST: {{ p.gst_rate }}%, Stock: {{ p.stock }})</option>
+                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-gst="{{ p.gst_rate }}" data-stock="{{ p.stock }}" data-hsn="{{ p.hsn_code or '' }}" data-unit="{{ p.unit or 'NOS' }}" data-brand="{{ p.brand or '' }}" data-category="{{ p.category or '' }}">{{ p.name }} - &#8377;{{ "{:,.2f}".format(p.price) }} (GST: {{ p.gst_rate }}%, Stock: {{ p.stock }}){% if p.brand %} [{{ p.brand }}]{% endif %}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -99,7 +95,7 @@
                                 <th>Taxable</th>
                                 <th>GST%</th>
                                 <th>GST Amt</th>
-                                <th>Total (edit)</th>
+                                <th>Amount</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -348,7 +344,6 @@ document.getElementById('resetBtn').addEventListener('click', function() {
     document.getElementById('dueDate').value = '';
     document.getElementById('discountInput').value = '0';
     document.getElementById('igstCheck').checked = false;
-    document.getElementById('reverseCharge').checked = false;
     document.getElementById('productSelect').selectedIndex = 0;
     document.getElementById('qtyInput').value = '1';
     document.querySelector('#invoiceItems tbody').innerHTML = '';
@@ -426,8 +421,7 @@ document.getElementById('createInvoiceBtn').addEventListener('click', function()
                 item_category: i.category
             })),
             discount: parseFloat(document.getElementById('discountInput').value) || 0,
-            cess: 0,
-            reverse_charge: document.getElementById('reverseCharge').checked
+            cess: 0
         })
     })
     .then(r => r.json())
